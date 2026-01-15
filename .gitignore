@@ -1,0 +1,80 @@
+# .NET
+## Generic build results
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
+
+## Project files
+*.user
+*.config.user
+*.suo
+*.sln.GhostDoc.xml
+
+## Packages and dependencies
+[Pp]ackages/
+# Except for packages.config, which is used by some older projects
+!**/packages.config*
+# Linux and Mac package directories
+[Ll]inux/[Pp]ackages/
+[Mm]ac/[Pp]ackages/
+
+## Rider
+.idea/
+*.iws
+*.iws.bak
+*.iws.old
+
+## VS Code
+.vscode/
+
+## Visual Studio
+# Visual Studio files
+*.cache
+*.ncb
+*.opendb
+*.opensdf
+*.safetensors
+*.sdf
+*.sublime-project
+*.sublime-workspace
+
+# Windows Azure Tools
+*.cache
+*.cscfg
+*.csdef
+*.cspkg
+*.cssess
+*.cstmpl
+*.vssscc
+
+# Miscellaneous
+# Backup files
+*.bak
+# Log files
+*.log
+# SQL Server files
+*.mdf
+*.ldf
+*.mdf.log
+# NuGet files
+*.nupkg
+*.snupkg
+# Resharper
+*.resharper
+# temp files
+*.tmp
+
+# Mac
+# Folder view configuration files
+.DS_Store
+# Thumbnail cache files
+._*
+# Files that might appear on external disks
+.Spotlight-V100
+.Trashes
+# Directories potentially created on remote AFP share
+.AppleDouble
+.LSOverride
+Icon?
+
