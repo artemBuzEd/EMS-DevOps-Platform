@@ -97,8 +97,6 @@ app.MapGrpcService<EventCatalogGrpcService>();
 // CorrelationId
 app.UseCorrelationId();
 
-//app.UseHttpsRedirection();
-
 app.UseAuthorization();
 
 app.MapControllers();

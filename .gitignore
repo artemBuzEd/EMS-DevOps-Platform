@@ -7,7 +7,7 @@
 **/obj/
 **/bin/
 .DS_Store
-.idea/
+
 
 ## Project files
 *.user
@@ -24,6 +24,7 @@
 [Mm]ac/[Pp]ackages/
 
 ## Rider
+**/.idea/
 .idea/
 *.iws
 *.iws.bak

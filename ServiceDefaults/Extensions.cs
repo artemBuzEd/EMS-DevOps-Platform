@@ -90,7 +90,7 @@ public static class Extensions
                     })
                     .AddGrpcClientInstrumentation(options =>
                     {
-                      options.SuppressDownstreamInstrumentation = true;
+                        options.SuppressDownstreamInstrumentation = true;
                     })
                     .AddSource(builder.Environment.ApplicationName)
                     .AddEntityFrameworkCoreInstrumentation(options =>
@@ -144,6 +144,9 @@ var samplingStrategy = builder.Configuration["OpenTelemetry:SamplingStrategy"] ?
                     .AddMeter("Microsoft.AspNetCore.Server.Kestrel")
                     .AddMeter("System.Net.Http")
                     .AddMeter("OpenTelemetry.Api");
+                
+                metrics.AddMeter(builder.Environment.ApplicationName);
+                
             });
 
         builder.AddOpenTelemetryExporters();
