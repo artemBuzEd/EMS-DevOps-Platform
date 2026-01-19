@@ -4,6 +4,10 @@
 [Rr]elease/
 [Bb]in/
 [Oo]bj/
+**/obj/
+**/bin/
+.DS_Store
+.idea/
 
 ## Project files
 *.user
@@ -27,6 +31,9 @@
 
 ## VS Code
 .vscode/
+
+## Env
+.env
 
 ## Visual Studio
 # Visual Studio files

@@ -1,5 +1,0 @@
-/Users/artembuziak/RiderProjects/MicroservicesPlatform/obj/Debug/net8.0/Reproduction.GeneratedMSBuildEditorConfig.editorconfig
-/Users/artembuziak/RiderProjects/MicroservicesPlatform/obj/Debug/net8.0/Reproduction.AssemblyInfoInputs.cache
-/Users/artembuziak/RiderProjects/MicroservicesPlatform/obj/Debug/net8.0/Reproduction.AssemblyInfo.cs
-/Users/artembuziak/RiderProjects/MicroservicesPlatform/obj/Debug/net8.0/Reproduction.csproj.CoreCompileInputs.cache
-/Users/artembuziak/RiderProjects/MicroservicesPlatform/obj/Debug/net8.0/Reproduction.sourcelink.json
