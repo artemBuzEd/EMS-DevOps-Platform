@@ -50,7 +50,7 @@ builder.Services.AddSwaggerGen();
 
 //Grpc Clients
 builder.Services.AddGrpcClient<UserProfile.UserProfileClient>(o =>
-    o.Address = new Uri("https://localhost:7146")).AddStandardResilienceHandler(options =>
+    o.Address = new Uri(builder.Configuration["services:UserProfileService:https:0"] ?? throw new InvalidOperationException("ENV missing"))).AddStandardResilienceHandler(options =>
 {
     options.Retry = new HttpRetryStrategyOptions
     {
@@ -74,7 +74,7 @@ builder.Services.AddGrpcClient<UserProfile.UserProfileClient>(o =>
     
 });
 builder.Services.AddGrpcClient<EventCatalog.EventCatalogClient>(o => 
-    o.Address = new Uri("https://localhost:7159")).AddStandardResilienceHandler(options =>
+    o.Address = new Uri(builder.Configuration["services:EventCatalogService:https:0"] ?? throw new InvalidOperationException("ENV missing"))).AddStandardResilienceHandler(options =>
 {
     options.Retry = new HttpRetryStrategyOptions
     {
@@ -89,12 +89,12 @@ builder.Services.AddScoped<AggregatorGrpcService>();
 
 builder.Services.AddHttpClient("EventCatalogService", client =>
 {
-    client.BaseAddress = new Uri("http://EventCatalogService");
+    client.BaseAddress = new Uri(builder.Configuration["services:EventCatalogService:https:0"] ?? throw new InvalidOperationException("ENV missing"));
 });
 
 builder.Services.AddHttpClient("UserProfileService", client =>
 {
-    client.BaseAddress = new Uri("http://UserProfileService");
+    client.BaseAddress = new Uri(builder.Configuration["services:UserProfileService:https:0"] ?? throw new InvalidOperationException("ENV missing"));
 });
 
 builder.Services.AddHttpClient("VenueService", client =>
