@@ -1,0 +1,37 @@
+# Standard .NET build artifacts
+**/bin
+**/obj
+**/out
+
+# Rider and Visual Studio files
+.idea/
+.vs/
+*.user
+*.suo
+*.cache
+
+# Source control
+.git
+.gitignore
+
+# NuGet packages and related files
+**/packages
+*.nuget.props
+*.nuget.targets
+
+# Logs and test results
+*.log
+TestResults/
+
+# Other common files/folders
+node_modules/
+ClientBin/
+Generated_Code/
+AppPackages/
+BundleArtifacts/
+
+# User secrets and certificates (handled by volume mounting in development)
+**/.env
+.microsoft/usersecrets
+.aspnet/https
+
