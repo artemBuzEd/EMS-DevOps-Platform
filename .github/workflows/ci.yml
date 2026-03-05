@@ -65,9 +65,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Extract Metadata
+        id: meta
         uses: docker/metadata-action@v5
         with: 
-          images: ${{ env.REGISRTY }}/${{ env.IMAGE_NAME }}/${{ matrix.service-name }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service-name }}
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=sha,format=long
@@ -78,7 +79,7 @@ jobs:
         with:
           context: .
           file: ${{ matrix.dockerfile }}
-          push: ${{ github.ref == 'refs/heads/main' }}
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
         
