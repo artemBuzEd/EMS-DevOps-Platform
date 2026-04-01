@@ -2,12 +2,14 @@ using System.Linq.Expressions;
 using DAL.EntityConfig;
 using DAL.Repositories.Contracts;
 using Microsoft.EntityFrameworkCore;
+using System.Runtime.CompilerServices;
+[assembly: InternalsVisibleTo("UserProfileService.Tests")]
 
 namespace DAL.Repositories;
 
 public class GenericRepository<TEntity> : IGenericRepository<TEntity> where TEntity : class
 {
-    protected readonly UserProfileDbContext _context;
+    internal readonly UserProfileDbContext _context;
     protected readonly DbSet<TEntity> _table;
     
     public GenericRepository(UserProfileDbContext userProfileDbContext)
