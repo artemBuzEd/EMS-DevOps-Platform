@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventCatalogApi", "EventCat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure", "Infrastructure\Infrastructure.csproj", "{65FD02CC-320E-47A4-9D20-0ACD36C320FF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application.Tests", "Application.Tests\Application.Tests.csproj", "{AE2641F7-93DA-4262-B163-18CF821D74DC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{65FD02CC-320E-47A4-9D20-0ACD36C320FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{65FD02CC-320E-47A4-9D20-0ACD36C320FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{65FD02CC-320E-47A4-9D20-0ACD36C320FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AE2641F7-93DA-4262-B163-18CF821D74DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE2641F7-93DA-4262-B163-18CF821D74DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE2641F7-93DA-4262-B163-18CF821D74DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE2641F7-93DA-4262-B163-18CF821D74DC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
