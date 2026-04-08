@@ -27,7 +27,12 @@ public class GlobalExceptionHandlingMiddleware : IMiddleware
         catch (Exception ex)
         {
             _logger.LogError(ex, ex.Message);
-
+            
+            if (context.Response.HasStarted)
+            {
+                throw;
+            }
+            
             HttpStatusCode statusCode;
             string title;
             string detail;
@@ -39,6 +44,7 @@ public class GlobalExceptionHandlingMiddleware : IMiddleware
                 _ => (HttpStatusCode.InternalServerError, "Internal Server Error", ex.Message)
             };
             
+            context.Response.Clear();
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)statusCode;
     
@@ -53,7 +59,6 @@ public class GlobalExceptionHandlingMiddleware : IMiddleware
             var json = JsonSerializer.Serialize(problem);
             
             await context.Response.WriteAsync(json);
-            context.Response.ContentType = "application/json";
         }
     }
 }

@@ -24,12 +24,19 @@ AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddDbContext<UserProfileDbContext>(option =>
+if (builder.Environment.EnvironmentName == "Testing") 
 {
-    //Getting ConnectionString from environmental variables passed by Aspire
-    string connectionString = builder.Configuration.GetConnectionString("UserProfileDb"); 
-    option.UseNpgsql(connectionString);
-});
+    builder.Services.AddDbContext<UserProfileDbContext>(options =>
+        options.UseSqlite("DataSource=:memory:"));
+}
+else 
+{ 
+    builder.Services.AddDbContext<UserProfileDbContext>(options => 
+    {
+        string connectionString = builder.Configuration.GetConnectionString("UserProfileDb");
+        options.UseNpgsql(connectionString);
+    });
+}
 
 // ServiceDefaults
 builder.AddServiceDefaults();
@@ -86,40 +93,44 @@ builder.Services.AddScoped<IValidator<UserProfileUpdateRequestDTO>, UserProfileU
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
-using (var serviceScope = app.Services.CreateScope())
+if (!app.Environment.IsEnvironment("Testing"))
 {
-    var services = serviceScope.ServiceProvider;
-    try
+    using (var serviceScope = app.Services.CreateScope())
     {
-        var context = services.GetRequiredService<UserProfileDbContext>();
-        var created = context.Database.EnsureCreated();
-        if (!created)
+        var services = serviceScope.ServiceProvider;
+        try
         {
-            Console.WriteLine("ERROR: Could not create database");
+            var context = services.GetRequiredService<UserProfileDbContext>();
+            var created = context.Database.EnsureCreated();
+            if (!created)
+            {
+                Console.WriteLine("ERROR: Could not create database");
+            }
+            else
+            {
+                Console.WriteLine("Successfully created Database");
+            }
         }
-        else
+        catch (Exception ex)
         {
-            Console.WriteLine("Successfully created Database");
+            Console.WriteLine("ERROR: Could not create database: " + ex.Message);
         }
     }
-    catch (Exception ex)
+
+    using (var serviceScope = app.Services.CreateScope())
     {
-        Console.WriteLine("ERROR: Could not create database: " + ex.Message);
+        var services = serviceScope.ServiceProvider;
+        try
+        {
+            await DataSeeder.SeedAsync(services);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("ERROR: Could not seed: " + ex.Message);
+        }
     }
 }
 
-using (var serviceScope = app.Services.CreateScope())
-{
-    var services = serviceScope.ServiceProvider;
-    try
-    {
-        await DataSeeder.SeedAsync(services);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine("ERROR: Could not seed: " + ex.Message);
-    }
-}
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -141,3 +152,5 @@ app.MapControllers();
 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 
 app.Run();
+
+public partial class Program { }

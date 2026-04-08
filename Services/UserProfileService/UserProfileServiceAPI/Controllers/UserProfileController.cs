@@ -43,7 +43,7 @@ public class UserProfileController : ControllerBase
         CancellationToken cancellationToken)
     {
         var user = await _userProfileService.CreateAsync(dto, cancellationToken);
-        return CreatedAtAction(nameof(GetUserByUserId), new {id = user.user_id}, user);
+        return CreatedAtAction(nameof(GetUserByUserId), new {userId = user.user_id}, user);
     }
     
     [HttpPut("{userId}")]
