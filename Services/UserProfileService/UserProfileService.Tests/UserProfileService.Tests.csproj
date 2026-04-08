@@ -26,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BLL\BLL.csproj" />
     <ProjectReference Include="..\DAL\DAL.csproj" />
+    <ProjectReference Include="..\UserProfileServiceAPI\UserProfileServiceAPI.csproj" />
   </ItemGroup>
 
 </Project>
