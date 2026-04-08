@@ -12,7 +12,7 @@ public interface IUserCommentService
     Task<UserInfoFromCommentResponceDTO> GetUserInfoFromCommentId(int commentId);
     Task<UserCommentResponceDTO> GetById(int commentId);
     Task<UserCommentResponceDTO> CreateAsync(UserCommentCreateRequestDTO dto, CancellationToken cancellationToken = default);
-    Task<UserCommentResponceDTO> UpdateAsync(int commentId, UserCommentUpdateRequestDTO dto, CancellationToken cancellationToken = default);
+    Task UpdateAsync(int commentId, UserCommentUpdateRequestDTO dto, CancellationToken cancellationToken = default);
     Task<PagedList<UserCommentResponceDTO>> GetAllPaginated(UserCommentParameters parameters);
     Task DeleteAsync(int commentId, CancellationToken cancellationToken = default);
 }

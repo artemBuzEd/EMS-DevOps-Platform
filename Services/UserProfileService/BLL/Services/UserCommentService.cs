@@ -73,7 +73,7 @@ public class UserCommentService : IUserCommentService
         }
     }
 
-    public async Task<UserCommentResponceDTO> UpdateAsync(int commentId, UserCommentUpdateRequestDTO dto, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(int commentId, UserCommentUpdateRequestDTO dto, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -84,7 +84,6 @@ public class UserCommentService : IUserCommentService
             await _unitOfWork.UserCommentRepository.UpdateAsync(commentToUpdate);
             await _unitOfWork.CompleteAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
-            return commentToUpdate.Adapt<UserCommentResponceDTO>();
         }
         catch (Exception ex)
         {

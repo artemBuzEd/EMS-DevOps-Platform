@@ -71,7 +71,7 @@ public class UserProfileService : IUserProfileService
 
     }
 
-    public async Task<UserProfileResponceDTO> UpdateAsync(string userId, UserProfileUpdateRequestDTO dto, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(string userId, UserProfileUpdateRequestDTO dto, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -82,8 +82,6 @@ public class UserProfileService : IUserProfileService
             await _unitOfWork.UserProfileRepository.UpdateAsync(userProfileToChange);
             await _unitOfWork.CompleteAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
-
-            return dto.Adapt<UserProfileResponceDTO>();
         }
         catch (Exception ex)
         {

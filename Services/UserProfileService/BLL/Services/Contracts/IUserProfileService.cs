@@ -10,7 +10,7 @@ public interface IUserProfileService
     Task<IEnumerable<UserProfileResponceDTO>> GetAllUsersAsync();
     Task<UserProfileResponceDTO> GetUserByIdAsync(string userId);
     Task<UserProfileResponceDTO> CreateAsync(UserProfileCreateRequestDTO dto, CancellationToken cancellationToken = default);
-    Task<UserProfileResponceDTO> UpdateAsync(string userId, UserProfileUpdateRequestDTO dto, CancellationToken cancellationToken = default);
+    Task UpdateAsync(string userId, UserProfileUpdateRequestDTO dto, CancellationToken cancellationToken = default);
     Task<PagedList<UserProfileResponceDTO>> GetAllPaginated(UserProfileParameters parameters);
     Task DeleteAsync(string userId, CancellationToken cancellationToken = default);
 }
