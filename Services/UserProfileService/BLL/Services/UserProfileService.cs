@@ -45,7 +45,9 @@ public class UserProfileService : IUserProfileService
         },
             logger: _logger);
         
-        //var userProfile = await _unitOfWork.UserProfileRepository.GetByIdAsync(userId);
+        if(userProfile is null)
+            throw new NotFoundException($"User with id {userId} not found");
+        
         return userProfile.Adapt<UserProfileResponceDTO>();
     }
 
@@ -63,6 +65,10 @@ public class UserProfileService : IUserProfileService
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
             return userProfileToCreate.Adapt<UserProfileResponceDTO>();
         }
+        catch (ValidationException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             await _unitOfWork.RollbackTransactionAsync(cancellationToken);
@@ -77,11 +83,15 @@ public class UserProfileService : IUserProfileService
         {
             var userProfileToChange = await isExists(userId);
             dto.Adapt(userProfileToChange);
-            
+
             await _unitOfWork.BeginTransactionAsync(cancellationToken);
             await _unitOfWork.UserProfileRepository.UpdateAsync(userProfileToChange);
             await _unitOfWork.CompleteAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
+        }
+        catch (NotFoundException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -104,11 +114,15 @@ public class UserProfileService : IUserProfileService
         try
         {
             var userProfileToDelete = await isExists(userId);
-            
+
             await _unitOfWork.BeginTransactionAsync(cancellationToken);
             await _unitOfWork.UserProfileRepository.DeleteAsync(userProfileToDelete);
             await _unitOfWork.CompleteAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
+        }
+        catch (NotFoundException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
