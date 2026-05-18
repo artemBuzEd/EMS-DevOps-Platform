@@ -1,6 +1,7 @@
 using System.Collections;
 using Aggregator.DTOs;
 using Aggregator.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Aggregator.Controllers;
@@ -20,6 +21,7 @@ public class AggregatedController : ControllerBase
         _grpcService = grpcService;
     }
     
+    [AllowAnonymous]
     [HttpGet("event-details-with-organizer/{eventId}")]
     [ProducesResponseType(typeof(EventWithOrganizerDto),StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -36,6 +38,7 @@ public class AggregatedController : ControllerBase
             return StatusCode(500, $"Internal server error {ex.Message}");
         }
     }
+    [AllowAnonymous]
     [HttpGet("event-details/{eventId}")]
     [ProducesResponseType(typeof(EventDetailsResponse),StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -162,6 +165,7 @@ public class AggregatedController : ControllerBase
         }
     }
 
+    [Authorize]
     [HttpGet("user-dashboard/{userId}")]
     [ProducesResponseType(typeof(UserDashboardResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

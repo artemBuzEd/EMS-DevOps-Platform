@@ -2,6 +2,7 @@ using BLL.DTOs.Request.UserComment;
 using BLL.DTOs.Responce;
 using BLL.Services.Contracts;
 using DAL.Entities.HelpModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebApplication1.Controllers;
@@ -15,7 +16,8 @@ public class UserCommentController : ControllerBase
     {
         _userCommentService = userCommentService;
     }
-    
+
+    [AllowAnonymous]
     [HttpGet("ByEventId/{eventId}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -24,7 +26,8 @@ public class UserCommentController : ControllerBase
         var comments = await _userCommentService.GetAllByEventId(eventId);
         return Ok(comments);
     }
-    
+
+    [AllowAnonymous]
     [HttpGet("ByUserId/{userId}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -33,7 +36,8 @@ public class UserCommentController : ControllerBase
         var comments = await _userCommentService.GetAllByUserId(userId);
         return Ok(comments);
     }
-    
+
+    [AllowAnonymous]
     [HttpGet("userInfoByComment/{commentId:int}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -43,7 +47,8 @@ public class UserCommentController : ControllerBase
         var comment = await _userCommentService.GetUserInfoFromCommentId(commentId);
         return Ok(comment);
     }
-    
+
+    [AllowAnonymous]
     [HttpGet("{commentId:int}"), ActionName("GetByCommentId")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -54,6 +59,7 @@ public class UserCommentController : ControllerBase
         return Ok(comment);
     }
 
+    [Authorize]
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -64,7 +70,8 @@ public class UserCommentController : ControllerBase
         var comment = await _userCommentService.CreateAsync(dto, cancellationToken);
         return CreatedAtAction(nameof(GetByCommentId), new {commentId = comment.id}, comment);
     }
-    
+
+    [Authorize]
     [HttpPut("{commentId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -75,7 +82,8 @@ public class UserCommentController : ControllerBase
         await _userCommentService.UpdateAsync(commentId, dto, cancellationToken);
         return NoContent();
     }
-    
+
+    [Authorize]
     [HttpDelete("{commentId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -85,7 +93,8 @@ public class UserCommentController : ControllerBase
         await _userCommentService.DeleteAsync(commentId, cancellationToken);
         return NoContent();
     }
-    
+
+    [AllowAnonymous]
     [HttpGet("paginated")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

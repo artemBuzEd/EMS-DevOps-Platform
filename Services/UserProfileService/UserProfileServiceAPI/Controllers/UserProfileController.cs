@@ -1,6 +1,7 @@
 using BLL.DTOs.Request.UserProfile;
 using BLL.Services.Contracts;
 using DAL.Entities.HelpModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebApplication1.Controllers;
@@ -15,6 +16,7 @@ public class UserProfileController : ControllerBase
         _userProfileService = userProfileService;
     }
 
+    [Authorize(Roles = "admin")]
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -25,6 +27,7 @@ public class UserProfileController : ControllerBase
         return Ok(profile);
     }
     
+    [Authorize]
     [HttpGet("{userId}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -35,6 +38,7 @@ public class UserProfileController : ControllerBase
         return Ok(user);
     }
     
+    [AllowAnonymous]
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -46,6 +50,7 @@ public class UserProfileController : ControllerBase
         return CreatedAtAction(nameof(GetUserByUserId), new {userId = user.user_id}, user);
     }
     
+    [Authorize]
     [HttpPut("{userId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -57,6 +62,7 @@ public class UserProfileController : ControllerBase
         return NoContent();
     }
     
+    [Authorize(Roles = "admin")]
     [HttpDelete("{userId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -67,6 +73,7 @@ public class UserProfileController : ControllerBase
         return NoContent();
     }
     
+    [Authorize(Roles = "admin")]
     [HttpGet("paginated")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

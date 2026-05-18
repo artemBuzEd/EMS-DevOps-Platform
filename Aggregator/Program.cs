@@ -1,4 +1,5 @@
 using System;
+using Aggregator.Auth;
 using Aggregator.Services;
 using EventCatalogApi.Protos;
 using ServiceDefaults;
@@ -23,6 +24,12 @@ builder.AddServiceDefaults();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Keycloak JWT auth
+builder.Services.AddKeycloakJwtAuth(builder.Configuration);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddTransient<AuthHeaderForwardingHandler>();
+builder.Services.AddAuthorizationBuilder();
 
 // builder.Services.AddSingleton(sp =>
 // {
@@ -90,17 +97,17 @@ builder.Services.AddScoped<AggregatorGrpcService>();
 builder.Services.AddHttpClient("EventCatalogService", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["services:EventCatalogService:https:0"] ?? throw new InvalidOperationException("ENV missing"));
-});
+}).AddHttpMessageHandler<AuthHeaderForwardingHandler>();
 
 builder.Services.AddHttpClient("UserProfileService", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["services:UserProfileService:https:0"] ?? throw new InvalidOperationException("ENV missing"));
-});
+}).AddHttpMessageHandler<AuthHeaderForwardingHandler>();
 
 builder.Services.AddHttpClient("VenueService", client =>
 {
     client.BaseAddress = new Uri("http://VenueService");
-});
+}).AddHttpMessageHandler<AuthHeaderForwardingHandler>();
 
 var app = builder.Build();
 
@@ -116,6 +123,7 @@ if (app.Environment.IsDevelopment())
 
 //app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

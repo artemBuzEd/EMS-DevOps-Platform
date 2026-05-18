@@ -1,6 +1,7 @@
 volumes:
   postgres_data:
   mongo_data:
+  keycloak_data:
 
 services:
   postgres:
@@ -44,15 +45,57 @@ services:
     healthcheck:
       test: >
         mongosh --quiet
-        -u ${MONGO_INITDB_ROOT_USERNAME} 
-        -p ${MONGO_INITDB_ROOT_PASSWORD} 
-        --authenticationDatabase admin 
-        --eval "db.runCommand({ping: 1}).ok" 
+        -u ${MONGO_INITDB_ROOT_USERNAME}
+        -p ${MONGO_INITDB_ROOT_PASSWORD}
+        --authenticationDatabase admin
+        --eval "db.runCommand({ping: 1}).ok"
       interval: 10s
       timeout: 5s
       retries: 5
-      
-    
+
+  # Keycloak identity provider
+  keycloak-db:
+    image: postgres:17.6
+    container_name: keycloak_db
+    environment:
+      - POSTGRES_DB=keycloak
+      - POSTGRES_USER=keycloak
+      - POSTGRES_PASSWORD=${KEYCLOAK_DB_PASSWORD}
+    volumes:
+      - keycloak_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: keycloak
+    # LOCAL-ONLY: use 'start' (production mode) in deployment
+    command: start-dev --import-realm
+    environment:
+      - KC_DB=postgres
+      - KC_DB_URL=jdbc:postgresql://keycloak-db:5432/keycloak
+      - KC_DB_USERNAME=keycloak
+      - KC_DB_PASSWORD=${KEYCLOAK_DB_PASSWORD}
+      - KC_BOOTSTRAP_ADMIN_USERNAME=${KEYCLOAK_ADMIN}
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+      - KC_HEALTH_ENABLED=true
+    ports:
+      - "8180:8080"
+    volumes:
+      - ./keycloak/realm-ems.json:/opt/keycloak/data/import/realm-ems.json:ro
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
   user-profile-service:
     platform: linux/amd64
     build:
@@ -61,6 +104,9 @@ services:
     environment:
       - ConnectionStrings__UserProfileDb=Host=postgres;Port=5432;Database=${POSTGRES_USER_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};
       - ConnectionStrings__Redis=redis:6379,password=${REDIS_REQUIREPASS}
+      - Keycloak__Authority=http://keycloak:8080/realms/ems
+      - Keycloak__Audience=ems-api
+      - Keycloak__RequireHttpsMetadata=false
     ports:
       - "8080:8080"
     depends_on:
@@ -68,7 +114,9 @@ services:
           condition: service_healthy
       redis:
         condition: service_healthy
-  
+      keycloak:
+        condition: service_healthy
+
   event-catalog-service:
     platform: linux/amd64
     build:
@@ -77,6 +125,9 @@ services:
     environment:
       - ConnectionStrings__EventCatalogDb=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/EventCatalogDb?authSource=admin&authMechanism=SCRAM-SHA-256
       - ConnectionStrings__Redis=redis:6379,password=${REDIS_REQUIREPASS}
+      - Keycloak__Authority=http://keycloak:8080/realms/ems
+      - Keycloak__Audience=ems-api
+      - Keycloak__RequireHttpsMetadata=false
     ports:
       - "8081:8080"
     depends_on:
@@ -84,7 +135,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-        
+      keycloak:
+        condition: service_healthy
+
   venue-service:
     build:
       context: .
@@ -92,6 +145,9 @@ services:
     environment:
       - ConnectionStrings__VenueDb=Host=postgres;Port=5432;Database=${POSTGRES_VENUE_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};
       - ConnectionStrings__Redis=redis:6379,password=${REDIS_REQUIREPASS}
+      - Keycloak__Authority=http://keycloak:8080/realms/ems
+      - Keycloak__Audience=ems-api
+      - Keycloak__RequireHttpsMetadata=false
     ports:
       - "8082:8080"
     depends_on:
@@ -99,7 +155,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-        
+      keycloak:
+        condition: service_healthy
+
   aggregator-service:
     deploy:
       resources:
@@ -107,7 +165,7 @@ services:
           cpus: '0.5'
           memory: 512M
     platform: linux/amd64
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
     environment:
@@ -118,6 +176,9 @@ services:
       - services__UserProfileService__https__0=http://user-profile-service:8080
       - services__VenueService__http__0=http://venue-service:8080
       - services__VenueService__https__0=http://venue-service:8080
+      - Keycloak__Authority=http://keycloak:8080/realms/ems
+      - Keycloak__Audience=ems-api
+      - Keycloak__RequireHttpsMetadata=false
     ports:
       - "8083:8080"
     depends_on:
@@ -129,8 +190,3 @@ services:
         condition: service_started
       user-profile-service:
         condition: service_started
-        
-    
-  
-  
-  
