@@ -14,9 +14,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\ServiceDefaults\ServiceDefaults.csproj" />
-      <ProjectReference Include="..\Services\EventCatalogService\EventCatalogApi\EventCatalogApi.csproj" />
-      <ProjectReference Include="..\Services\EventManagmentSystem\VenueService\VenueService.csproj" />
-      <ProjectReference Include="..\Services\UserProfileService\UserProfileServiceAPI\UserProfileServiceAPI.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using ServiceDefaults;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -6,6 +7,14 @@ builder.AddServiceDefaults();
 
 // Keycloak JWT auth
 builder.Services.AddKeycloakJwtAuth(builder.Configuration);
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ConfigureEndpointDefaults(listenOptions =>
+    {
+        listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
+    });
+});
 
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy("authenticated", policy => policy.RequireAuthenticatedUser())
