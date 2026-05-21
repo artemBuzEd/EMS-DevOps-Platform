@@ -51,6 +51,7 @@
         "http://host.docker.internal:*"
       ],
       "defaultClientScopes": [
+        "basic",
         "web-origins",
         "acr",
         "profile",
@@ -110,11 +111,24 @@
         "http://host.docker.internal:*"
       ],
       "defaultClientScopes": [
+        "basic",
         "web-origins",
         "acr",
         "profile",
         "roles",
         "email"
+      ],
+      "protocolMappers": [
+        {
+          "name": "ems-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "ems-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
       ]
     }
   ],

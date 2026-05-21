@@ -72,7 +72,7 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
     container_name: keycloak
-    # LOCAL-ONLY: use 'start' (production mode) in deployment
+    # LOCAL-ONLY 'start' production mode in deployment
     command: start-dev --import-realm
     environment:
       - KC_DB=postgres
@@ -82,6 +82,8 @@ services:
       - KC_BOOTSTRAP_ADMIN_USERNAME=${KEYCLOAK_ADMIN}
       - KC_BOOTSTRAP_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
       - KC_HEALTH_ENABLED=true
+      - KC_HOSTNAME=http://localhost:8180
+      - KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true
     ports:
       - "8180:8080"
     volumes:
@@ -90,11 +92,11 @@ services:
       keycloak-db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200'"]
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | grep -q '200 OK'"]
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 30s
+      start_period: 60s
 
   user-profile-service:
     platform: linux/amd64
@@ -189,4 +191,35 @@ services:
       venue-service:
         condition: service_started
       user-profile-service:
+        condition: service_started
+  
+  api-gateway:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: ApiGateway/Dockerfile
+    environment:
+      - Keycloak__Authority=http://keycloak:8080/realms/ems
+      - Keycloak__Audience=ems-api
+      - Keycloak__RequireHttpsMetadata=false
+      - services__EventCatalogService__http__0=http://event-catalog-service:8080
+      - services__EventCatalogService__https__0=http://event-catalog-service:8080
+      - services__UserProfileService__http__0=http://user-profile-service:8080
+      - services__UserProfileService__https__0=http://user-profile-service:8080
+      - services__VenueService__http__0=http://venue-service:8080
+      - services__VenueService__https__0=http://venue-service:8080
+      - services__Aggregator__http__0=http://aggregator-service:8080
+      - services__Aggregator__https__0=http://aggregator-service:8080
+    ports:
+      - "10000:8080"
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      user-profile-service:
+        condition: service_started
+      event-catalog-service:
+        condition: service_started
+      venue-service:
+        condition: service_started
+      aggregator-service:
         condition: service_started
