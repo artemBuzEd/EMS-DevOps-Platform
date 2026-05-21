@@ -91,8 +91,15 @@ public class EventsController : BaseApiController
         CancellationToken cancellationToken = default
     )
     {
-        var organizerId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
+        var organizerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        
+        Console.WriteLine($"[CreateEvent] IsAuthenticated={User.Identity?.IsAuthenticated}");
+        Console.WriteLine($"[CreateEvent] AuthType={User.Identity?.AuthenticationType}");
+        Console.WriteLine($"[CreateEvent] organizerId='{organizerId ?? "<null>"}'");
+        Console.WriteLine("[CreateEvent] All claims:");
+        foreach (var c in User.Claims)
+            Console.WriteLine($"  {c.Type} = {c.Value}");
+        
         var command = new CreateEventCommand(
             request.Title,
             request.Description,

@@ -10,6 +10,5 @@ public record CreateEventRequest(
     string Country,
     string CategoryName,
     string CategoryDescription,
-    string OrganizerId,
     string VenueId,
     int Capacity);
