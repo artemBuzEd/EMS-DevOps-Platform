@@ -10,6 +10,8 @@ using FluentValidation;
 using MediatR;
 using MediatR.Pipeline;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Check.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using ServiceDefaults;
 
 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
@@ -26,12 +28,24 @@ builder.Services.AddSwaggerGen();
 // ServiceDefaults
 builder.AddServiceDefaults();
 
+// Keycloak JWT auth
+builder.Services.AddKeycloakJwtAuth(builder.Configuration);
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("CanCreateEvent", policy =>
+        policy.RequireRole("organizer", "admin"))
+    .AddPolicy("EventOwner", policy =>
+        policy.AddRequirements(new EventOwnerRequirement()));
+
+builder.Services.AddScoped<IAuthorizationHandler, EventOwnerAuthorizationHandler>();
+
 
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
     serverOptions.ConfigureEndpointDefaults(listenOptions =>
     {
-        listenOptions.Protocols = HttpProtocols.Http2;
+        listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
     });
 });
 
@@ -97,6 +111,7 @@ app.MapGrpcService<EventCatalogGrpcService>();
 // CorrelationId
 app.UseCorrelationId();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

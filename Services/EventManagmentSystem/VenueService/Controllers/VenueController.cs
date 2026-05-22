@@ -1,5 +1,6 @@
 using EMS.DAL.ADO.NET.Entities;
 using EMS.DAL.ADO.NET.Repositories.Contracts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace VenueService.Controllers;
@@ -17,6 +18,7 @@ public class VenueController : ControllerBase
         _logger = logger;
     }
     
+    [AllowAnonymous]
     [HttpGet("GetAllVenues")]
     public async Task<ActionResult<IEnumerable<Venue>>> GetAllVenues()
     {
@@ -35,6 +37,7 @@ public class VenueController : ControllerBase
     }
     
     
+    [AllowAnonymous]
     [HttpGet("GetVenuesById/{id:int}", Name = "GetVenuesById")]
     public async Task<ActionResult<Venue>> GetVenuesByIdAsync(int id)
     {
@@ -60,6 +63,7 @@ public class VenueController : ControllerBase
         }
     }
     
+    [Authorize(Roles = "organizer,admin")]
     [HttpPost("PostVenue")]
     public async Task<ActionResult> PostVenueAsync([FromBody] Venue @venue)
     {
@@ -89,6 +93,7 @@ public class VenueController : ControllerBase
         }
     }
 
+    [AllowAnonymous]
     [HttpGet("GetVenueByCity/{city}/")]
     public async Task<ActionResult<IEnumerable<Venue>>> GetVenueByCityAsync(string city)
     {
@@ -114,6 +119,7 @@ public class VenueController : ControllerBase
         }
     }
     
+    [Authorize(Roles = "admin")]
     [HttpDelete("Delete/{id}")]
     public async Task<ActionResult> DeleteAsync(int id)
     {

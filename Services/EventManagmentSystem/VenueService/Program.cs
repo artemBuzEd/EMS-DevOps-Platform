@@ -31,6 +31,10 @@ builder.Services.AddScoped<IDbTransaction>(s =>
 // Service Defaults
 builder.AddServiceDefaults();
 
+// Keycloak JWT auth
+builder.Services.AddKeycloakJwtAuth(builder.Configuration);
+builder.Services.AddAuthorizationBuilder();
+
 builder.Services.AddScoped<IVenueRepository, VenueRepository>();
 builder.Services.AddScoped<IEventRepository, EventRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -48,6 +52,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

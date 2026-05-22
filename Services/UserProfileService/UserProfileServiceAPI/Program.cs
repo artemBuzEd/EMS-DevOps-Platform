@@ -41,11 +41,17 @@ else
 // ServiceDefaults
 builder.AddServiceDefaults();
 
+// Keycloak JWT auth
+builder.Services.AddKeycloakJwtAuth(builder.Configuration);
+
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("AdminOnly", policy => policy.RequireRole("admin"));
+
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
     serverOptions.ConfigureEndpointDefaults(listenOptions =>
     {
-        listenOptions.Protocols = HttpProtocols.Http2;
+        listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
     });
 });
 
@@ -145,7 +151,9 @@ app.MapGrpcService<UserProfileGrpcService>();
 
 //app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<UserProfileAutoProvisionMiddleware>();
 
 app.MapControllers();
 

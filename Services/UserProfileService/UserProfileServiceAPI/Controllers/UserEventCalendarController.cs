@@ -1,6 +1,7 @@
 using BLL.DTOs.Request.UserEventCalendar;
 using BLL.DTOs.Responce;
 using BLL.Services.Contracts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebApplication1.Controllers;
@@ -14,8 +15,9 @@ public class UserEventCalendarController : ControllerBase
     public UserEventCalendarController(IUserEventCalendarService userEventCalendarService)
     {
         _userEventCalendarService = userEventCalendarService;
-    }   
-    
+    }
+
+    [AllowAnonymous]
     [HttpGet("ByUserId/{userId}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -24,7 +26,8 @@ public class UserEventCalendarController : ControllerBase
         var result = await _userEventCalendarService.GetAllByUserId(userId);
         return Ok(result);
     }
-    
+
+    [AllowAnonymous]
     [HttpGet("RegisteredByEventId/{eventId}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -34,7 +37,8 @@ public class UserEventCalendarController : ControllerBase
         var result = _userEventCalendarService.GetAllRegisteredEventCalendarsByEventId(eventId);
         return Ok(result);
     }
-    
+
+    [AllowAnonymous]
     [HttpGet("UserInfoByEventId/{eventId}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -44,7 +48,8 @@ public class UserEventCalendarController : ControllerBase
         var result = await _userEventCalendarService.GetAllUserInfoAndEventCalendarByEventId(eventId);
         return Ok(result);
     }
-    
+
+    [AllowAnonymous]
     [HttpGet("ByRegistrationId/{registrationId}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -55,6 +60,7 @@ public class UserEventCalendarController : ControllerBase
         return Ok(result);
     }
 
+    [AllowAnonymous]
     [HttpGet("{calendarId}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -64,7 +70,8 @@ public class UserEventCalendarController : ControllerBase
         var result = await _userEventCalendarService.GetById(calendarId);
         return Ok(result);
     }
-    
+
+    [Authorize]
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -75,7 +82,8 @@ public class UserEventCalendarController : ControllerBase
         var calendars = await _userEventCalendarService.CreateAsync(dto, cancellationToken);
         return CreatedAtAction(nameof(GetEventCalendarById), new {id = calendars.id}, calendars);
     }
-    
+
+    [Authorize]
     [HttpDelete]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]

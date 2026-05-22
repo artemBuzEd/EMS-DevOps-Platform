@@ -10,6 +10,7 @@
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
 
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.13" />
         <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.9.0" />
         <PackageReference Include="Microsoft.Extensions.ServiceDiscovery" Version="9.5.2" />
         <PackageReference Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" Version="2.1.0" />
