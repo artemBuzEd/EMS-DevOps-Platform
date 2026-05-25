@@ -17,7 +17,6 @@ public class GlobalExceptionHandlingMiddleware : IMiddleware
         _logger = logger;
     }
     
-    //Todo make specific http status code (Fixed, needed review)
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
         try

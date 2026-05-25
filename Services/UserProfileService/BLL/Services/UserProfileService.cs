@@ -51,12 +51,25 @@ public class UserProfileService : IUserProfileService
         return userProfile.Adapt<UserProfileResponceDTO>();
     }
 
-    public async Task<UserProfileResponceDTO> CreateAsync(UserProfileCreateRequestDTO dto, CancellationToken cancellationToken = default)
+    public async Task<bool> ExistsAsync(string userId)
     {
-        if (await _unitOfWork.UserProfileRepository.GetByIdAsync(dto.user_id) != null)
+        string cacheKey = $"userProfile_userId:{userId}";
+        var userProfile = await _cache.GetOrCreateAsync(cacheKey, async token =>
+        {
+            return await _unitOfWork.UserProfileRepository.GetByIdAsync(userId);
+        }, logger: _logger);
+        return userProfile is not null;
+    }
+
+    public async Task<UserProfileResponceDTO> CreateAsync(string userId, string firstName, string lastName, UserProfileCreateRequestDTO dto, CancellationToken cancellationToken = default)
+    {
+        if (await _unitOfWork.UserProfileRepository.GetByIdAsync(userId) != null)
             throw new ValidationException("user with same id is already exist");
-        
+
         var userProfileToCreate = dto.Adapt<UserProfile>();
+        userProfileToCreate.user_id = userId;
+        userProfileToCreate.first_name = firstName;
+        userProfileToCreate.last_name = lastName;
         try
         {
             await _unitOfWork.BeginTransactionAsync(cancellationToken);

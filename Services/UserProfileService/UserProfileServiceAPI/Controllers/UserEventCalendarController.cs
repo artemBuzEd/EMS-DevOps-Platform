@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using BLL.DTOs.Request.UserEventCalendar;
 using BLL.DTOs.Responce;
 using BLL.Services.Contracts;
@@ -79,7 +80,11 @@ public class UserEventCalendarController : ControllerBase
     public async Task<IActionResult> CreateEventCalendar([FromBody] UserEventCalendarCreateRequestDTO dto,
         CancellationToken cancellationToken)
     {
-        var calendars = await _userEventCalendarService.CreateAsync(dto, cancellationToken);
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized();
+
+        var calendars = await _userEventCalendarService.CreateAsync(userId, dto, cancellationToken);
         return CreatedAtAction(nameof(GetEventCalendarById), new {id = calendars.id}, calendars);
     }
 

@@ -87,16 +87,17 @@ public class UserEventCalendarService : IUserEventCalendarService
         }
     }
 
-    public async Task<UserEventCalendarResponceDTO> CreateAsync(UserEventCalendarCreateRequestDTO dto, CancellationToken cancelationToken = default)
+    public async Task<UserEventCalendarResponceDTO> CreateAsync(string userId, UserEventCalendarCreateRequestDTO dto, CancellationToken cancelationToken = default)
     {
         try
         {
-            if (_unitOfWork.UserEventCalendarRepository.CheckForExistingCalendar(dto.user_id, dto.event_id))
+            if (_unitOfWork.UserEventCalendarRepository.CheckForExistingCalendar(userId, dto.event_id))
             {
                 throw new ValidationException("user calendar on event with same id's is already exists");
             }
 
             var eventCalendarToCreate = dto.Adapt<UserEventCalendar>();
+            eventCalendarToCreate.user_id = userId;
             await _unitOfWork.BeginTransactionAsync(cancelationToken);
             await _unitOfWork.UserEventCalendarRepository.CreateAsync(eventCalendarToCreate);
             await _unitOfWork.CompleteAsync(cancelationToken);

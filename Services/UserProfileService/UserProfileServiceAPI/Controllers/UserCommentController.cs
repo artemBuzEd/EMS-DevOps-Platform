@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using BLL.DTOs.Request.UserComment;
 using BLL.DTOs.Responce;
 using BLL.Services.Contracts;
@@ -67,7 +68,11 @@ public class UserCommentController : ControllerBase
     public async Task<IActionResult> CreateComment([FromBody] UserCommentCreateRequestDTO dto,
         CancellationToken cancellationToken)
     {
-        var comment = await _userCommentService.CreateAsync(dto, cancellationToken);
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized();
+
+        var comment = await _userCommentService.CreateAsync(userId, dto, cancellationToken);
         return CreatedAtAction(nameof(GetByCommentId), new {commentId = comment.id}, comment);
     }
 

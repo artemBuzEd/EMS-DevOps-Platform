@@ -1,4 +1,6 @@
+using System.Net.Http.Headers;
 using DAL.EntityConfig;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
@@ -40,7 +42,16 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
                 services.Remove(d);
 
             services.AddDistributedMemoryCache();
+
+            services.AddAuthentication(defaultScheme: TestAuthHandler.SchemeName)
+                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
+                    TestAuthHandler.SchemeName, _ => { });
         });
+    }
+
+    protected override void ConfigureClient(HttpClient client)
+    {
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(TestAuthHandler.SchemeName);
     }
     
     public void InitializeDb()

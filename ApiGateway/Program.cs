@@ -17,8 +17,7 @@ builder.WebHost.ConfigureKestrel(options =>
 });
 
 builder.Services.AddAuthorizationBuilder()
-    .AddPolicy("authenticated", policy => policy.RequireAuthenticatedUser())
-    .AddPolicy("organizer", policy => policy.RequireRole("organizer", "admin"));
+    .AddPolicy("authenticated", policy => policy.RequireAuthenticatedUser());
 
 //Swagger
 builder.Services.AddSwaggerGen();
