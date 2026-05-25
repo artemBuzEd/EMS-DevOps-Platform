@@ -11,7 +11,7 @@ public interface IUserCommentService
     Task<IEnumerable<UserCommentResponceDTO>> GetAllByUserId(string userId);
     Task<UserInfoFromCommentResponceDTO> GetUserInfoFromCommentId(int commentId);
     Task<UserCommentResponceDTO> GetById(int commentId);
-    Task<UserCommentResponceDTO> CreateAsync(UserCommentCreateRequestDTO dto, CancellationToken cancellationToken = default);
+    Task<UserCommentResponceDTO> CreateAsync(string userId, UserCommentCreateRequestDTO dto, CancellationToken cancellationToken = default);
     Task UpdateAsync(int commentId, UserCommentUpdateRequestDTO dto, CancellationToken cancellationToken = default);
     Task<PagedList<UserCommentResponceDTO>> GetAllPaginated(UserCommentParameters parameters);
     Task DeleteAsync(int commentId, CancellationToken cancellationToken = default);

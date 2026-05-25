@@ -13,7 +13,7 @@ public interface IUserEventCalendarService
     Task<IEnumerable<UserInfoAndEventCalendarResponceDTO>> GetAllUserInfoAndEventCalendarByEventId(string eventId);
     Task<IEnumerable<UserEventCalendarResponceDTO>> GetAllEventCalendarsByRegistrationId(int registrationId);
     Task<UserEventCalendarResponceDTO> GetById(int calendarId);
-    Task<UserEventCalendarResponceDTO> CreateAsync(UserEventCalendarCreateRequestDTO dto, CancellationToken cancelationToken = default);
+    Task<UserEventCalendarResponceDTO> CreateAsync(string userId, UserEventCalendarCreateRequestDTO dto, CancellationToken cancelationToken = default);
     Task<PagedList<UserEventCalendarResponceDTO>> GetAllPaginated(UserEventCalendarParameters parameters);
     Task DeleteAsync(int calendarId, CancellationToken cancelationToken = default);
 }

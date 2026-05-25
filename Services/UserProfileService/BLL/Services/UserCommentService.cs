@@ -55,9 +55,10 @@ public class UserCommentService : IUserCommentService
         return comment.Adapt<UserCommentResponceDTO>();
     }
 
-    public async Task<UserCommentResponceDTO> CreateAsync(UserCommentCreateRequestDTO dto, CancellationToken cancellationToken = default)
+    public async Task<UserCommentResponceDTO> CreateAsync(string userId, UserCommentCreateRequestDTO dto, CancellationToken cancellationToken = default)
     {
         var commentToCreate = dto.Adapt<UserComment>();
+        commentToCreate.user_id = userId;
         try
         {
             await _unitOfWork.BeginTransactionAsync(cancellationToken);

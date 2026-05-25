@@ -38,18 +38,6 @@ public class UserProfileController : ControllerBase
         return Ok(user);
     }
     
-    [AllowAnonymous]
-    [HttpPost]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> CreateUser([FromBody] UserProfileCreateRequestDTO dto,
-        CancellationToken cancellationToken)
-    {
-        var user = await _userProfileService.CreateAsync(dto, cancellationToken);
-        return CreatedAtAction(nameof(GetUserByUserId), new {userId = user.user_id}, user);
-    }
-    
     [Authorize]
     [HttpPut("{userId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

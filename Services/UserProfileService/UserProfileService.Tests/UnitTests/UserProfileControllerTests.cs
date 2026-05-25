@@ -46,28 +46,6 @@ public class UserProfileControllerTests
     }
 
     [Fact]
-    public async Task CreateUser_ValidDto_ReturnsCreatedAtActionResult()
-    {
-        var dto = new UserProfileCreateRequestDTO();
-
-        var createdUser = new UserProfileResponceDTO
-        {
-            user_id = "123"
-        };
-        
-        _userProfileServiceMock
-            .Setup(s => s.CreateAsync(dto, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(createdUser);
-
-        var result = await _controller.CreateUser(dto, CancellationToken.None);
-
-        var created = result.Should().BeOfType<CreatedAtActionResult>().Subject;
-        
-        created.StatusCode.Should().Be(201);
-        created.Value.Should().BeEquivalentTo(createdUser);
-    }
-
-    [Fact]
     public async Task UpdateUser_ValidDto_ReturnsNoContentResult()
     {
         var dto = new UserProfileUpdateRequestDTO();

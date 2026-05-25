@@ -53,23 +53,6 @@ public class UserProfileControllerTests : IClassFixture<CustomWebApplicationFact
     }
 
     [Fact]
-    public async Task CreateUser_ValidRequest_ReturnsCreated()
-    {
-        var dto = new
-        {
-            user_id = "10",
-            first_name = "Integration",
-            last_name = "Test",
-            bio = "created by test",
-            birth_date = new DateTime(2001,1,1)
-        };
-
-        var response = await _client.PostAsJsonAsync("/api/users/UserProfile", dto);
-
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-    }
-
-    [Fact]
     public async Task UpdateUser_ReturnsNoContent()
     {
         var dto = new

@@ -18,26 +18,20 @@ public class UserProfileAutoProvisionMiddleware
         if (context.User.Identity?.IsAuthenticated == true)
         {
             var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!string.IsNullOrEmpty(userId))
+            if (!string.IsNullOrEmpty(userId) && !await userProfileService.ExistsAsync(userId))
             {
-                try
-                {
-                    await userProfileService.GetUserByIdAsync(userId);
-                }
-                catch
-                {
-                    var firstName = context.User.FindFirstValue("given_name") ?? "";
-                    var lastName = context.User.FindFirstValue("family_name") ?? "";
+                var firstName = context.User.FindFirstValue("given_name") ?? "";
+                var lastName = context.User.FindFirstValue("family_name") ?? "";
 
-                    await userProfileService.CreateAsync(new UserProfileCreateRequestDTO
+                await userProfileService.CreateAsync(
+                    userId,
+                    string.IsNullOrEmpty(firstName) ? "New" : firstName,
+                    string.IsNullOrEmpty(lastName) ? "User" : lastName,
+                    new UserProfileCreateRequestDTO
                     {
-                        user_id = userId,
-                        first_name = string.IsNullOrEmpty(firstName) ? "New" : firstName,
-                        last_name = string.IsNullOrEmpty(lastName) ? "User" : lastName,
                         bio = "",
-                        birth_date = DateTime.UtcNow
+                        birth_date = DateTime.UtcNow.AddDays(-1)
                     });
-                }
             }
         }
 

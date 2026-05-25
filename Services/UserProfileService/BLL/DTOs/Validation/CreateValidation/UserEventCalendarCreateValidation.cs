@@ -10,7 +10,6 @@ public class UserEventCalendarCreateValidation : AbstractValidator<UserEventCale
 {
     public UserEventCalendarCreateValidation()
     {
-        RuleFor(u => u.user_id).NotNull().NotEmpty().WithMessage("user id cannot be empty or null");
         RuleFor(u => u.event_id).NotNull().NotEmpty().WithMessage("event id cannot be empty or null");
         RuleFor(u => u.status).IsEnumName(typeof(CalendarStatus), true).NotEmpty()
             .WithMessage("status cannot be empty or null, also might violate constraint rule");
