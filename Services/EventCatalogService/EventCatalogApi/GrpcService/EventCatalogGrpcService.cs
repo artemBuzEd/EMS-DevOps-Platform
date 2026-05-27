@@ -1,6 +1,7 @@
 using Application.Events.Commands.CreateEvent;
 using Application.Events.Queries.GetAllEventsQuery;
 using Application.Events.Queries.GetEventByIdQuery;
+using Application.Events.Queries.GetEventsByIdsQuery;
 using Domain.ValueObjects;
 using EventCatalogApi.Protos;
 using Google.Protobuf.WellKnownTypes;
@@ -93,4 +94,21 @@ public class EventCatalogGrpcService : EventCatalog.EventCatalogBase
         };
     }
 
+    public override async Task<GetEventsByIdsResponse> GetEventsByIds(GetEventsByIdsRequest request, ServerCallContext context)
+    {
+        var ids = request.EventIds.ToList();
+        _logger.LogInformation("gRPC GetEventsByIds called for {Count} IDs", ids.Count);
+
+        var query = new GetEventsByIdsQuery(ids);
+        var events = await _mediator.Send(query);
+
+        var response = new GetEventsByIdsResponse();
+        response.Events.AddRange(events.Select(e => new EventTitleResponse
+        {
+            Id = e.Id,
+            Title = e.Title
+        }));
+
+        return response;
+    }
 }

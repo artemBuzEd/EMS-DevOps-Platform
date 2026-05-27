@@ -54,4 +54,19 @@ public class AggregatorGrpcService
             }
         };
     }
+
+    public async Task<Dictionary<string, string>> GetEventTitlesByIdsAsync(IEnumerable<string> eventIds)
+    {
+        var distinctIds = eventIds.Distinct().ToList();
+        if (distinctIds.Count == 0)
+            return new Dictionary<string, string>();
+
+        _logger.LogInformation("gRPC GetEventsByIds called for {Count} distinct event IDs", distinctIds.Count);
+
+        var request = new GetEventsByIdsRequest();
+        request.EventIds.AddRange(distinctIds);
+
+        var response = await _eventClient.GetEventsByIdsAsync(request);
+        return response.Events.ToDictionary(e => e.Id, e => e.Title);
+    }
 }
