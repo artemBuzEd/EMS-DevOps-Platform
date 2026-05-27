@@ -14,4 +14,5 @@ public interface IUserProfileService
     Task UpdateAsync(string userId, UserProfileUpdateRequestDTO dto, CancellationToken cancellationToken = default);
     Task<PagedList<UserProfileResponceDTO>> GetAllPaginated(UserProfileParameters parameters);
     Task DeleteAsync(string userId, CancellationToken cancellationToken = default);
+    Task UpdateAvatarUrlAsync(string userId, string? avatarUrl, CancellationToken cancellationToken = default);
 }

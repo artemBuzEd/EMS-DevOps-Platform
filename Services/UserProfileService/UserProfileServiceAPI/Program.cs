@@ -5,6 +5,7 @@ using BLL.DTOs.Validation.CreateValidation;
 using BLL.DTOs.Validation.UpdateValidation;
 using BLL.Services;
 using BLL.Services.Contracts;
+using Common.FileStorage;
 using DAL.BogusSeed;
 using DAL.BogusSeed.Fakers;
 using DAL.EntityConfig;
@@ -15,6 +16,7 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using ServiceDefaults;
 using WebApplication1.GrpcService;
 using WebApplication1.Middleware;
@@ -95,6 +97,9 @@ builder.Services.AddScoped<IValidator<UserProfileUpdateRequestDTO>, UserProfileU
 
 builder.Services.AddHttpContextAccessor();
 
+// File Storage
+builder.Services.AddLocalFileStorage(builder.Configuration);
+
 var app = builder.Build();
 if (!app.Environment.IsEnvironment("Testing"))
 {
@@ -142,6 +147,18 @@ if (app.Environment.IsDevelopment())
 }
 //CorrelationId
 app.UseCorrelationId();
+
+// Serve uploaded files as static files
+var uploadPath = builder.Configuration["FileStorage:BasePath"] ?? "/app/uploads";
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    Directory.CreateDirectory(uploadPath);
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(uploadPath),
+        RequestPath = "/uploads"
+    });
+}
 
 //gRPC
 app.MapGrpcService<UserProfileGrpcService>();
