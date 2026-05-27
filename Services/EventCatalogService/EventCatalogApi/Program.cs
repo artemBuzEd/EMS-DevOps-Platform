@@ -6,12 +6,14 @@ using Application.Validations.CreateEventValidations;
 using Check.GrpcService;
 using Check.Middleware;
 using Check.MongoDbDI;
+using Common.FileStorage;
 using FluentValidation;
 using MediatR;
 using MediatR.Pipeline;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Check.Authorization;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.FileProviders;
 using ServiceDefaults;
 
 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
@@ -85,6 +87,9 @@ builder.Services.AddValidatorsFromAssembly(typeof(CreateEventCommandValidator).A
 
 builder.Services.AddMongoDb(builder.Configuration);
 
+// File Storage
+builder.Services.AddLocalFileStorage(builder.Configuration);
+
 builder.Services.AddSingleton<Stopwatch>();
 builder.Services.AddScoped(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
 builder.Services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
@@ -97,6 +102,17 @@ using (var scope = app.Services.CreateScope())
     await MongoDbDiInjection.InitializeDatabaseAsync(scope.ServiceProvider);
 }
 
+
+var uploadPath = builder.Configuration["FileStorage:BasePath"] ?? "/app/uploads";
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    Directory.CreateDirectory(uploadPath);
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(uploadPath),
+        RequestPath = "/uploads"
+    });
+}
 
 app.UseMiddleware<ExceptionMiddleware>();
 // Configure the HTTP request pipeline.

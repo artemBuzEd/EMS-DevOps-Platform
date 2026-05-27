@@ -16,7 +16,8 @@ public static class MapsterConfig
             .Map(dest => dest.Title, src => src.Title)
             .Map(dest => dest.StartDate, src => src.DateRange.Start)
             .Map(dest => dest.EndDate, src => src.DateRange.End)
-            .Map(dest => dest.FullLocation, src => $"{src.Location.Address}, {src.Location.City}, {src.Location.Country}");
+            .Map(dest => dest.FullLocation, src => $"{src.Location.Address}, {src.Location.City}, {src.Location.Country}")
+            .Map(dest => dest.PictureUrl, src => src.PictureUrl);
 
         TypeAdapterConfig<Event, EventDto>
             .NewConfig()
@@ -29,7 +30,8 @@ public static class MapsterConfig
             .Map(dest => dest.CategoryName, src => src.Category.Name)
             .Map(dest => dest.OrganizerId, src => src.OrganizerId)
             .Map(dest => dest.VenueId, src => src.VenueId)
-            .Map(dest => dest.Capacity, src => src.Capacity);
+            .Map(dest => dest.Capacity, src => src.Capacity)
+            .Map(dest => dest.PictureUrl, src => src.PictureUrl);
         
         TypeAdapterConfig<PagedResult<Event>, PagedResult<EventMiniDto>>
             .NewConfig()

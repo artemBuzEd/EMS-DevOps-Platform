@@ -27,8 +27,11 @@ public class Event : BaseEntity
     [BsonElement("venueId")] 
     public string VenueId { get; private set; }
 
-    [BsonElement("capacity")] 
+    [BsonElement("capacity")]
     public int Capacity { get; private set; }
+
+    [BsonElement("pictureUrl")]
+    public string? PictureUrl { get; private set; }
 
     private Event() : base()
     {
@@ -88,6 +91,12 @@ public class Event : BaseEntity
     public void UpdateDescription(string newDescription)
     {
         Description = newDescription;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void SetPictureUrl(string? url)
+    {
+        PictureUrl = url;
         UpdatedAt = DateTime.UtcNow;
     }
 
