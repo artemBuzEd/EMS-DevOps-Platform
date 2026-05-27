@@ -187,53 +187,33 @@ public class AggregatedController : ControllerBase
 
             var calendars = await calendarTask;
             var comments = await commentsTask;
-            /* Needed for adding event info to each calendar.
-            // Now impossible because of the random seed event_id's in UserProfile DB. 
-            // Also this is the SHITTIEST implementation idea, because request time is increases x10  
-            var registeredEvents = new List<RegisteredEventDto>();
-            foreach (var calendar in calendars)
-            {
-                var eventData = await GetEventAsync(calendar.event_id);
-                if (eventData != null)
-                {
-                    VenueDto? venue = null;
-                    if (eventData.venueId.HasValue)
-                    {
-                        venue = await GetVenueAsync(eventData.venueId.Value);
-                    }
 
-                    registeredEvents.Add(new RegisteredEventDto
-                    {
-                        Event = eventData,
-                        Venue = venue,
-                        AddedAt = calendar.added_at,
-                        RegistrationStatus = calendar.status,
-                    });
-                }
-            }
-            */
-            
-            /* Needed for event Title adding flow
-            var enrichedComments = new List<UserCommentDto>();
-            foreach (var comment in comments)
+            var eventTitles = new Dictionary<string, string>();
+            try
             {
-                var eventData = await GetEventAsync(comment.event_id);
-                enrichedComments.Add(new UserCommentDto
-                {
-                    CommentId = comment.id,
-                    EventId = comment.event_id,
-                    EventTitle = eventData?.title ?? "Unknown Event",
-                    CommentText = comment.comment,
-                    CreatedAt = comment.added_at,
-                    IsChanged =comment.is_changed
-                });
+                var eventIds = comments.Select(c => c.event_id).Distinct();
+                eventTitles = await _grpcService.GetEventTitlesByIdsAsync(eventIds);
             }
-            */
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching event titles for user {UserId} [{Message}]", userId, ex.Message);
+            }
+
+            var enrichedComments = comments.Select(comment => new UserCommentDto
+            {
+                CommentId = comment.id,
+                EventId = comment.event_id,
+                EventTitle = eventTitles.TryGetValue(comment.event_id, out var title) ? title : "Unknown Event",
+                CommentText = comment.comment,
+                CreatedAt = comment.added_at,
+                IsChanged = comment.is_changed
+            });
+
             var response = new UserDashboardResponse
             {
                 User = user,
                 MyCalendars = calendars,
-                MyComments = comments
+                MyComments = enrichedComments
             };
             
             return Ok(response);

@@ -126,6 +126,16 @@ public class EventRepository : IEventRepository
         return new PagedResult<Event>(events, (int)totalCount, page, pageSize);
     }
 
+    public async Task<IEnumerable<Event>> GetByIdsAsync(IEnumerable<string> ids)
+    {
+        var idList = ids.ToList();
+        if (idList.Count == 0)
+            return Enumerable.Empty<Event>();
+
+        var filter = Builders<Event>.Filter.In(e => e.Id, idList);
+        return await _context.Events.Find(filter).ToListAsync();
+    }
+
     public async Task<IEnumerable<Event>> GetEventsByDateAsync(DateTime startDate, DateTime endDate)
     {
         var pipeline = new[]

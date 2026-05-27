@@ -10,6 +10,7 @@ service EventCatalog {
   rpc GetEvent (GetEventRequest) returns (EventFullResponse);
   rpc GetAllEvents (GetAllEventsRequest) returns (EventListResponse);
   rpc CreateEvent (CreateEventRequest) returns (CreatedEventResponse);
+  rpc GetEventsByIds (GetEventsByIdsRequest) returns (GetEventsByIdsResponse);
 }
 
 message GetEventRequest {
@@ -66,4 +67,17 @@ message EventListResponse {
 
 message CreatedEventResponse {
   string id = 1;
+}
+
+message GetEventsByIdsRequest {
+  repeated string event_ids = 1;
+}
+
+message EventTitleResponse {
+  string id = 1;
+  string title = 2;
+}
+
+message GetEventsByIdsResponse {
+  repeated EventTitleResponse events = 1;
 }
