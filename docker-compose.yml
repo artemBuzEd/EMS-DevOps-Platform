@@ -2,6 +2,8 @@ volumes:
   postgres_data:
   mongo_data:
   keycloak_data:
+  user_uploads:
+  event_uploads:
 
 services:
   postgres:
@@ -109,8 +111,12 @@ services:
       - Keycloak__Authority=http://keycloak:8080/realms/ems
       - Keycloak__Audience=ems-api
       - Keycloak__RequireHttpsMetadata=false
+      - FileStorage__BasePath=/app/uploads
+      - FileStorage__BaseUrl=/uploads
     ports:
       - "8080:8080"
+    volumes:
+      - user_uploads:/app/uploads
     depends_on:
       postgres:
           condition: service_healthy
@@ -130,8 +136,12 @@ services:
       - Keycloak__Authority=http://keycloak:8080/realms/ems
       - Keycloak__Audience=ems-api
       - Keycloak__RequireHttpsMetadata=false
+      - FileStorage__BasePath=/app/uploads
+      - FileStorage__BaseUrl=/uploads
     ports:
       - "8081:8080"
+    volumes:
+      - event_uploads:/app/uploads
     depends_on:
       mongo:
         condition: service_healthy
