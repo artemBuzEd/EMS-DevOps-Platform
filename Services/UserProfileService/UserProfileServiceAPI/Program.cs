@@ -109,19 +109,12 @@ if (!app.Environment.IsEnvironment("Testing"))
         try
         {
             var context = services.GetRequiredService<UserProfileDbContext>();
-            var created = context.Database.EnsureCreated();
-            if (!created)
-            {
-                Console.WriteLine("ERROR: Could not create database");
-            }
-            else
-            {
-                Console.WriteLine("Successfully created Database");
-            }
+            await context.Database.MigrateAsync();
+            Console.WriteLine("Successfully applied database migrations");
         }
         catch (Exception ex)
         {
-            Console.WriteLine("ERROR: Could not create database: " + ex.Message);
+            Console.WriteLine("ERROR: Could not apply migrations: " + ex.Message);
         }
     }
 
