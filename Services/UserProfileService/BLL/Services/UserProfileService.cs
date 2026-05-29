@@ -144,6 +144,32 @@ public class UserProfileService : IUserProfileService
         }
     }
     
+    public async Task UpdateAvatarUrlAsync(string userId, string? avatarUrl, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var userProfile = await isExists(userId);
+            userProfile.avatar_url = avatarUrl;
+
+            await _unitOfWork.BeginTransactionAsync(cancellationToken);
+            await _unitOfWork.UserProfileRepository.UpdateAsync(userProfile);
+            await _unitOfWork.CompleteAsync(cancellationToken);
+            await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+            var cacheKey = $"userProfile_userId:{userId}";
+            await _cache.RemoveAsync(cacheKey, cancellationToken);
+        }
+        catch (NotFoundException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+            throw new ApplicationException($"Error updating avatar for user with id: {userId} " + ex.Message);
+        }
+    }
+
     private async Task<UserProfile> isExists(string userId)
     {
         var _userProfile = await _unitOfWork.UserProfileRepository.GetByIdAsync(userId);

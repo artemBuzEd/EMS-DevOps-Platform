@@ -1,5 +1,6 @@
 using BLL.DTOs.Request.UserProfile;
 using BLL.Services.Contracts;
+using Common.FileStorage;
 using DAL.Entities.HelpModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,10 +11,12 @@ namespace WebApplication1.Controllers;
 public class UserProfileController : ControllerBase
 {
     private readonly IUserProfileService _userProfileService;
+    private readonly IFileStorage _fileStorage;
 
-    public UserProfileController(IUserProfileService userProfileService)
+    public UserProfileController(IUserProfileService userProfileService, IFileStorage fileStorage)
     {
         _userProfileService = userProfileService;
+        _fileStorage = fileStorage;
     }
 
     [Authorize(Roles = "admin")]
@@ -70,5 +73,93 @@ public class UserProfileController : ControllerBase
     {
         var result = await _userProfileService.GetAllPaginated(parameters);
         return Ok(result);
+    }
+
+    [Authorize]
+    [HttpPost("{userId}/avatar")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status413PayloadTooLarge)]
+    [ProducesResponseType(StatusCodes.Status415UnsupportedMediaType)]
+    public async Task<IActionResult> UploadAvatar(string userId, IFormFile file, CancellationToken cancellationToken)
+    {
+        if (!await _userProfileService.ExistsAsync(userId))
+            return NotFound(new { message = $"User with id {userId} not found" });
+
+        await using var stream = file.OpenReadStream();
+        var result = ImageValidator.Validate(stream, file.ContentType, file.Length);
+
+        switch (result)
+        {
+            case ImageValidationResult.TooLarge:
+                return StatusCode(StatusCodes.Status413PayloadTooLarge,
+                    new { message = "File size exceeds 5 MB limit." });
+            case ImageValidationResult.UnsupportedType:
+            case ImageValidationResult.InvalidMagicBytes:
+                return StatusCode(StatusCodes.Status415UnsupportedMediaType,
+                    new { message = "Only JPEG, PNG, and WebP images are allowed." });
+        }
+
+        stream.Position = 0;
+        var ext = ImageValidator.GetExtension(file.ContentType);
+        var fileName = $"avatars/{userId}-{Guid.NewGuid()}{ext}";
+
+        var existingUser = await _userProfileService.GetUserByIdAsync(userId);
+        if (!string.IsNullOrEmpty(existingUser.avatar_url))
+        {
+            var oldKey = ExtractKeyFromUrl(existingUser.avatar_url);
+            if (oldKey != null)
+                await _fileStorage.DeleteAsync(oldKey, cancellationToken);
+        }
+
+        var key = await _fileStorage.SaveAsync(stream, fileName, file.ContentType, cancellationToken);
+        var imageUrl = _fileStorage.GetPublicUrl(key);
+        await _userProfileService.UpdateAvatarUrlAsync(userId, imageUrl, cancellationToken);
+
+        return Ok(new { imageUrl });
+    }
+
+    [Authorize]
+    [HttpGet("{userId}/avatar")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetAvatar(string userId)
+    {
+        if (!await _userProfileService.ExistsAsync(userId))
+            return NotFound(new { message = $"User with id {userId} not found" });
+
+        var user = await _userProfileService.GetUserByIdAsync(userId);
+        if (string.IsNullOrEmpty(user.avatar_url))
+            return NotFound(new { message = "No avatar set for this user." });
+
+        return Ok(new { imageUrl = user.avatar_url });
+    }
+
+    [Authorize]
+    [HttpDelete("{userId}/avatar")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteAvatar(string userId, CancellationToken cancellationToken)
+    {
+        if (!await _userProfileService.ExistsAsync(userId))
+            return NotFound(new { message = $"User with id {userId} not found" });
+
+        var user = await _userProfileService.GetUserByIdAsync(userId);
+        if (!string.IsNullOrEmpty(user.avatar_url))
+        {
+            var oldKey = ExtractKeyFromUrl(user.avatar_url);
+            if (oldKey != null)
+                await _fileStorage.DeleteAsync(oldKey, cancellationToken);
+            await _userProfileService.UpdateAvatarUrlAsync(userId, null, cancellationToken);
+        }
+
+        return NoContent();
+    }
+
+    private static string? ExtractKeyFromUrl(string url)
+    {
+        var uploadsIndex = url.IndexOf("/uploads/", StringComparison.OrdinalIgnoreCase);
+        if (uploadsIndex < 0) return null;
+        return url[(uploadsIndex + "/uploads/".Length)..];
     }
 }

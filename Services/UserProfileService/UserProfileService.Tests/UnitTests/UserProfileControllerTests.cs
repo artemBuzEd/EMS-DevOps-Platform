@@ -2,6 +2,7 @@ using BLL.DTOs.Request.UserProfile;
 using BLL.DTOs.Responce;
 using BLL.Exceptions;
 using BLL.Services.Contracts;
+using Common.FileStorage;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -16,12 +17,14 @@ namespace UserProfileService.Tests.UnitTests;
 public class UserProfileControllerTests
 {
     private readonly Mock<IUserProfileService> _userProfileServiceMock;
+    private readonly Mock<IFileStorage> _fileStorageMock;
     private readonly UserProfileController _controller;
 
     public UserProfileControllerTests()
     {
         _userProfileServiceMock = new Mock<IUserProfileService>();
-        _controller = new UserProfileController(_userProfileServiceMock.Object);
+        _fileStorageMock = new Mock<IFileStorage>();
+        _controller = new UserProfileController(_userProfileServiceMock.Object, _fileStorageMock.Object);
 
         _controller.ControllerContext = new ControllerContext
         {

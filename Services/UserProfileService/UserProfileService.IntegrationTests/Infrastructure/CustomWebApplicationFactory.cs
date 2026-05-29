@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using Common.FileStorage;
 using DAL.EntityConfig;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
@@ -13,16 +14,22 @@ namespace UserProfileService.IntegrationTests.Infrastructure;
 public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly SqliteConnection _connection;
+    private readonly string _testUploadPath;
 
     public CustomWebApplicationFactory()
     {
         _connection = new SqliteConnection("DataSource=:memory:");
         _connection.Open();
+        _testUploadPath = Path.Combine(Path.GetTempPath(), $"ems-test-uploads-{Guid.NewGuid()}");
+        Directory.CreateDirectory(_testUploadPath);
     }
-    
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+
+        builder.UseSetting("FileStorage:BasePath", _testUploadPath);
+        builder.UseSetting("FileStorage:BaseUrl", "/uploads");
 
         builder.ConfigureServices(services =>
         {
@@ -46,6 +53,14 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             services.AddAuthentication(defaultScheme: TestAuthHandler.SchemeName)
                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
                     TestAuthHandler.SchemeName, _ => { });
+
+            var fileStorageDescriptors = services
+                .Where(d => d.ServiceType == typeof(IFileStorage))
+                .ToList();
+            foreach (var d in fileStorageDescriptors)
+                services.Remove(d);
+
+            services.AddSingleton<IFileStorage>(new LocalFileStorage(_testUploadPath, "/uploads"));
         });
     }
 
@@ -65,6 +80,10 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     {
         base.Dispose(disposing);
         if (disposing)
+        {
             _connection.Dispose();
+            if (Directory.Exists(_testUploadPath))
+                Directory.Delete(_testUploadPath, true);
+        }
     }
 }

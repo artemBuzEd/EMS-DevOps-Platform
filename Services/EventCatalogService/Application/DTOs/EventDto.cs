@@ -10,5 +10,6 @@ public record EventDto(
     string CategoryName,
     string OrganizerId,
     string VenueId,
-    int Capacity
+    int Capacity,
+    string? PictureUrl
     );

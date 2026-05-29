@@ -16,7 +16,8 @@ public class UserProfileConfiguration : IEntityTypeConfiguration<UserProfile>
         builder.Property(u => u.last_name).HasMaxLength(50).IsRequired();
         builder.Property(u => u.birth_date).HasColumnType("DATE").IsRequired();
         builder.Property(u => u.created_at).HasColumnType("DATE").IsRequired().HasDefaultValueSql("CURRENT_DATE");
-        
+        builder.Property(u => u.avatar_url).HasMaxLength(500).IsRequired(false);
+
         builder.HasMany(c => c.Comments)
             .WithOne(u => u.user)
             .HasForeignKey(u => u.user_id)

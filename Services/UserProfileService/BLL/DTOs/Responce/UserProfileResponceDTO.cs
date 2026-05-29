@@ -8,4 +8,5 @@ public class UserProfileResponceDTO
     public string bio { get; set; }
     public DateTime birth_date { get; set; }
     public DateTime created_at { get; set; }
+    public string? avatar_url { get; set; }
 }
