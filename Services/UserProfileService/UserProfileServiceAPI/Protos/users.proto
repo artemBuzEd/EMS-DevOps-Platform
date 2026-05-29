@@ -1,11 +1,15 @@
 syntax = "proto3";
 
+import "google/protobuf/timestamp.proto";
+
 option csharp_namespace = "UserProfileApi.Protos";
 
 package users;
 
 service UserProfile {
   rpc GetUser (GetUserRequest) returns (UserResponse);
+  rpc GetEventComments (GetEventCommentsRequest) returns (EventCommentsResponse);
+  rpc GetRegisteredUsersCount (GetRegisteredUsersCountRequest) returns (RegisteredUsersCountResponse);
 }
 
 message GetUserRequest {
@@ -17,4 +21,30 @@ message UserResponse {
   string first_name = 2;
   string last_name = 3;
   string bio = 4;
+}
+
+message GetEventCommentsRequest {
+  string event_id = 1;
+}
+
+message EventCommentResponse {
+  int32 id = 1;
+  string user_id = 2;
+  string event_id = 3;
+  string comment = 4;
+  int32 rating = 5;
+  google.protobuf.Timestamp added_at = 6;
+  bool is_changed = 7;
+}
+
+message EventCommentsResponse {
+  repeated EventCommentResponse comments = 1;
+}
+
+message GetRegisteredUsersCountRequest {
+  string event_id = 1;
+}
+
+message RegisteredUsersCountResponse {
+  int32 count = 1;
 }

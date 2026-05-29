@@ -1,6 +1,6 @@
-using System.Collections;
 using Aggregator.DTOs;
 using Aggregator.Services;
+using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -29,7 +29,8 @@ public class AggregatedController : ControllerBase
     {
         try
         {
-            var result = await _grpcService.GetEventWithOrganizerDetails(eventId);
+            var result
+                = await _grpcService.GetEventWithOrganizerDetails(eventId);
             return Ok(result);
         }
         catch (Exception ex)
@@ -46,72 +47,29 @@ public class AggregatedController : ControllerBase
     {
         try
         {
-            var eventTask = GetEventAsync(eventId);
-            var commentsTask = GetEventCommentsAsync(eventId);
-            
-            //this now didnt work due to random seeded calendars in UserProfileService.
-            //Also there should be other registration service, so for now there would be empty collenction
-            var registrationTask = GetRegisteredUsersCountAsync(eventId);
-            await Task.WhenAll(eventTask, commentsTask, registrationTask);
+            var result = await _grpcService.GetEventDetailsAsync(eventId);
 
-            var eventData = await eventTask;
-            if (eventData == null)
+            if (result.Event.venueId.HasValue)
             {
-                return NotFound($"Event {eventId} not found");
+                result.Venue = await GetVenueAsync(result.Event.venueId.Value);
             }
 
-            VenueDto? venue = null;
-            if (eventData.venueId.HasValue)
-            {
-                venue = await GetVenueAsync(eventData.venueId.Value);
-            }
-
-            var response = new EventDetailsResponse
-            {
-                Event = eventData,
-                Venue = venue,
-                Comments = await commentsTask,
-                RegisteredUsersCount = await registrationTask,
-            };
-
-            return Ok(response);
+            return Ok(result);
         }
-        catch (HttpRequestException ex)
+        catch (RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.NotFound)
         {
-            _logger.LogError(ex, "Error calling downstream services for event {EventId} [{Message}]", eventId,
-                ex.Message);
+            return NotFound($"Event {eventId} not found");
+        }
+        catch (RpcException ex)
+        {
+            _logger.LogError(ex, "gRPC error for event {EventId} [{Message}]", eventId, ex.Message);
             return StatusCode(503, "Service temporarily unavailable");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error calling downstream services for event {EventId} [{Message}]", eventId, ex.Message);
-            return StatusCode(500, "Server error occured");
+            _logger.LogError(ex, "Error fetching event details for {EventId} [{Message}]", eventId, ex.Message);
+            return StatusCode(500, "Internal server error");
         }
-    }
-
-    private async Task<EventDto?> GetEventAsync(string eventId)
-    {
-        var client = _httpClientFactory.CreateClient("EventCatalogService");
-        var response = await client.GetAsync($"/api/events/{eventId}");
-
-
-        if (!response.IsSuccessStatusCode)
-        {
-            return null;
-        }
-
-        return await response.Content.ReadFromJsonAsync<EventDto>();
-    }
-
-    private async Task<VenueDto?> GetEventVenueAsync(string eventId)
-    {
-        var client = _httpClientFactory.CreateClient("VenueService");
-        var eventClient = _httpClientFactory.CreateClient("EventCatalogService");
-        var eventResponse = await eventClient.GetAsync($"/api/events/{eventId}");
-        var eventData = await eventResponse.Content.ReadFromJsonAsync<EventDto>();
-        
-        var response = await client.GetAsync($"/api/venues/{eventData?.venueId}");
-        return await response.Content.ReadFromJsonAsync<VenueDto>();
     }
 
     private async Task<VenueDto?> GetVenueAsync(int venueId)
@@ -119,50 +77,6 @@ public class AggregatedController : ControllerBase
         var client = _httpClientFactory.CreateClient("VenueService");
         var response = await client.GetAsync($"/api/venue/GetVenuesById/{venueId}");
         return await response.Content.ReadFromJsonAsync<VenueDto>();
-    }
-
-    private async Task<IEnumerable<CommentDto>> GetEventCommentsAsync(string eventId)
-    {
-        try
-        {
-            var client = _httpClientFactory.CreateClient("UserProfileService");
-            var response = await client.GetAsync($"/api/users/UserComment/ByEventId/{eventId}");
-
-            if (!response.IsSuccessStatusCode)
-            {
-                return Enumerable.Empty<CommentDto>();
-            }
-
-            return await response.Content.ReadFromJsonAsync<IEnumerable<CommentDto>>() ??
-                   Enumerable.Empty<CommentDto>();
-        }
-        catch(Exception ex)
-        {
-            _logger.LogError(ex, "ERROR IN AGGREGATED CONTROLLER " + ex.Message);
-            return Enumerable.Empty<CommentDto>();
-        }
-    }
-    
-    private async Task<int> GetRegisteredUsersCountAsync(string eventId)
-    {
-        try
-        {
-            var client = _httpClientFactory.CreateClient("UserProfileService");
-            var response = await client.GetAsync($"/api/users/UserEventCalendar/RegisteredByEventId/{eventId}");
-            
-            if (!response.IsSuccessStatusCode)
-            {
-                return 0;
-            }
-
-            var registrations = await response.Content.ReadFromJsonAsync<IEnumerable<object>>();
-            return registrations?.Count() ?? 0;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching registrations for event {EventId} [{Message}] ", eventId,ex.Message);
-            return 0;
-        }
     }
 
     [Authorize]
