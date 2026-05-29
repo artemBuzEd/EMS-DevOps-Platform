@@ -108,6 +108,10 @@ services:
     environment:
       - ConnectionStrings__UserProfileDb=Host=postgres;Port=5432;Database=${POSTGRES_USER_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};
       - ConnectionStrings__Redis=redis:6379,password=${REDIS_REQUIREPASS}
+      - Kestrel__Endpoints__Rest__Url=http://*:8080
+      - Kestrel__Endpoints__Rest__Protocols=Http1
+      - Kestrel__Endpoints__Grpc__Url=http://*:50051
+      - Kestrel__Endpoints__Grpc__Protocols=Http2
       - Keycloak__Authority=http://keycloak:8080/realms/ems
       - Keycloak__Audience=ems-api
       - Keycloak__RequireHttpsMetadata=false
@@ -133,6 +137,10 @@ services:
     environment:
       - ConnectionStrings__EventCatalogDb=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/EventCatalogDb?authSource=admin&authMechanism=SCRAM-SHA-256
       - ConnectionStrings__Redis=redis:6379,password=${REDIS_REQUIREPASS}
+      - Kestrel__Endpoints__Rest__Url=http://*:8080
+      - Kestrel__Endpoints__Rest__Protocols=Http1
+      - Kestrel__Endpoints__Grpc__Url=http://*:50051
+      - Kestrel__Endpoints__Grpc__Protocols=Http2
       - Keycloak__Authority=http://keycloak:8080/realms/ems
       - Keycloak__Audience=ems-api
       - Keycloak__RequireHttpsMetadata=false
@@ -184,6 +192,8 @@ services:
       - ConnectionStrings__Redis=redis:6379,password=${REDIS_REQUIREPASS}
       - services__EventCatalogService__http__0=http://event-catalog-service:8080
       - services__EventCatalogService__https__0=http://event-catalog-service:8080
+      - services__EventCatalogService__grpc__0=http://event-catalog-service:50051
+      - services__UserProfileService__grpc__0=http://user-profile-service:50051
       - services__UserProfileService__http__0=http://user-profile-service:8080
       - services__UserProfileService__https__0=http://user-profile-service:8080
       - services__VenueService__http__0=http://venue-service:8080

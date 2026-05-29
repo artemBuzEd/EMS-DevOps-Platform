@@ -57,7 +57,9 @@ builder.Services.AddAuthorizationBuilder();
 
 //Grpc Clients
 builder.Services.AddGrpcClient<UserProfile.UserProfileClient>(o =>
-    o.Address = new Uri(builder.Configuration["services:UserProfileService:https:0"] ?? throw new InvalidOperationException("ENV missing"))).AddStandardResilienceHandler(options =>
+    o.Address = new Uri(builder.Configuration["services:UserProfileService:grpc:0"] 
+                        ?? builder.Configuration["services:UserProfileService:http:0"]
+                        ?? throw new InvalidOperationException("ENV missing"))).AddStandardResilienceHandler(options =>
 {
     options.Retry = new HttpRetryStrategyOptions
     {
@@ -81,7 +83,9 @@ builder.Services.AddGrpcClient<UserProfile.UserProfileClient>(o =>
     
 });
 builder.Services.AddGrpcClient<EventCatalog.EventCatalogClient>(o => 
-    o.Address = new Uri(builder.Configuration["services:EventCatalogService:https:0"] ?? throw new InvalidOperationException("ENV missing"))).AddStandardResilienceHandler(options =>
+    o.Address = new Uri(builder.Configuration["services:EventCatalogService:grpc:0"] 
+                        ?? builder.Configuration["services:EventCatalogService:http:0"]
+                        ?? throw new InvalidOperationException("ENV missing"))).AddStandardResilienceHandler(options =>
 {
     options.Retry = new HttpRetryStrategyOptions
     {
