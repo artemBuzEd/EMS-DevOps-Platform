@@ -69,4 +69,51 @@ public class AggregatorGrpcService
         var response = await _eventClient.GetEventsByIdsAsync(request);
         return response.Events.ToDictionary(e => e.Id, e => e.Title);
     }
+
+    public async Task<EventDetailsResponse> GetEventDetailsAsync(string eventId)
+    {
+        _logger.LogInformation("gRPC GetEventDetailsAsync called for: {EventId}", eventId);
+
+        var eventCall = _eventClient.GetEventAsync(new GetEventRequest { EventId = eventId });
+        var commentsCall = _userProfileClient.GetEventCommentsAsync(
+            new GetEventCommentsRequest { EventId = eventId });
+        var registrationsCall = _userProfileClient.GetRegisteredUsersCountAsync(
+            new GetRegisteredUsersCountRequest { EventId = eventId });
+
+        await Task.WhenAll(
+            eventCall.ResponseAsync,
+            commentsCall.ResponseAsync,
+            registrationsCall.ResponseAsync);
+
+        var eventResponse = await eventCall.ResponseAsync;
+        var commentsResponse = await commentsCall.ResponseAsync;
+        var registrationsResponse = await registrationsCall.ResponseAsync;
+
+        return new EventDetailsResponse
+        {
+            Event = new EventDto
+            {
+                id = eventResponse.Id,
+                title = eventResponse.Title,
+                description = eventResponse.Description,
+                startDate = eventResponse.StartDate.ToDateTime(),
+                endDate = eventResponse.EndDate.ToDateTime(),
+                FullLocation = eventResponse.FullLocation,
+                organizerId = eventResponse.OrganizerId,
+                venueId = string.IsNullOrEmpty(eventResponse.VenueId) ? (int?)null : int.Parse(eventResponse.VenueId),
+                capacity = eventResponse.Capacity
+            },
+            Comments = commentsResponse.Comments.Select(c => new CommentDto
+            {
+                id = c.Id,
+                user_id = c.UserId,
+                event_id = c.EventId,
+                comment = c.Comment,
+                rating = c.Rating,
+                added_at = c.AddedAt.ToDateTime(),
+                is_changed = c.IsChanged
+            }),
+            RegisteredUsersCount = registrationsResponse.Count
+        };
+    }
 }

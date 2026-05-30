@@ -49,6 +49,7 @@ message EventFullResponse {
   string organizer_id = 8;
   string venue_id = 9;
   int32 capacity = 10;
+  optional string picture_url = 11;
 }
 
 message EventMiniResponse {

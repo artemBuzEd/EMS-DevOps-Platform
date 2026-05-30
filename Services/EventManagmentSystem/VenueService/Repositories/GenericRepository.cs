@@ -36,8 +36,7 @@ public abstract class GenericRepository<T> :IGenericRepository<T> where T : clas
             var result = await _sqlConnection.QuerySingleOrDefaultAsync<T>($"SELECT * FROM {_tableName} WHERE Id=@Id", 
                 param: new { Id = id }, 
                 transaction: _dbTransaction);
-            if (result == null)
-                throw new KeyNotFoundException($"{_tableName} with id [{id}] could not be found.");
+            
             return result;
         }
 

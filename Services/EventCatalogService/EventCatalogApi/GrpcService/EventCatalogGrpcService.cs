@@ -29,9 +29,8 @@ public class EventCatalogGrpcService : EventCatalog.EventCatalogBase
 
         if (eventDto is null)
             throw new RpcException(new Status(StatusCode.NotFound, $"Event not found with id {request.EventId}"));
-
-        return new EventFullResponse
-        {
+        
+        var response = new EventFullResponse {
             Id = eventDto.Id,
             Title = eventDto.Title,
             Description = eventDto.Description,
@@ -41,8 +40,14 @@ public class EventCatalogGrpcService : EventCatalog.EventCatalogBase
             CategoryName = eventDto.CategoryName,
             OrganizerId = eventDto.OrganizerId,
             VenueId = eventDto.VenueId,
-            Capacity = eventDto.Capacity
+            Capacity = eventDto.Capacity,
+            
         };
+
+        if(eventDto.PictureUrl is not null)
+            response.PictureUrl = eventDto.PictureUrl;
+        
+        return response;
     }
 
     public override async Task<EventListResponse> GetAllEvents(GetAllEventsRequest request, ServerCallContext context)

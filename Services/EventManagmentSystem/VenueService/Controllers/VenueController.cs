@@ -50,11 +50,8 @@ public class VenueController : ControllerBase
                 _logger.LogInformation($"Returned null venue. Venue not found with id {id}");
                 return NotFound();
             }
-            else
-            {
-                _logger.LogInformation($"Returned Venue with id {id}");
-                return Ok(result);
-            }
+            _logger.LogInformation($"Returned Venue with id {id}");
+            return Ok(result);
         }
         catch (Exception ex)
         {
