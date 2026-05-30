@@ -45,10 +45,16 @@ builder.Services.AddScoped<IAuthorizationHandler, EventOwnerAuthorizationHandler
 
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
+    serverOptions.Limits.MaxRequestBodySize = 6 * 1024 * 1024;
     serverOptions.ConfigureEndpointDefaults(listenOptions =>
     {
         listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
     });
+});
+
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(o =>
+{
+    o.MultipartBodyLengthLimit = 6 * 1024 * 1024;
 });
 
 // Redis
@@ -135,3 +141,5 @@ app.MapControllers();
 // app.UseHttpsRedirection();
 
 app.Run();
+
+public partial class Program { }

@@ -142,13 +142,120 @@ public class EventsController : BaseApiController
         return await HandleDeleteCommand<DeleteEventCommand>(command, cancellationToken);
     }
 
+    // TODO: gate by auth once policy lands (currently CanCreateEvent)
     [Authorize(Policy = "CanCreateEvent")]
     [HttpPost("{id}/picture")]
+    [RequestSizeLimit(6 * 1024 * 1024)]
     public async Task<IActionResult> UploadPicture(string id, IFormFile file, CancellationToken cancellationToken = default)
     {
         var eventEntity = await _eventRepository.GetByIdAsync(id);
         if (eventEntity is null)
             return NotFound(new { message = $"Event with id {id} not found" });
+
+        return await ValidateAndStoreImageAsync(eventEntity, file, cancellationToken)
+               ?? Ok(new { imageUrl = eventEntity.PictureUrl });
+    }
+
+    // TODO: gate by auth once policy lands (currently CanCreateEvent)
+    [Authorize(Policy = "CanCreateEvent")]
+    [HttpPost("multipart")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(6 * 1024 * 1024)]
+    public async Task<IActionResult> CreateEventMultipart(
+        [FromForm] CreateEventMultipartRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var organizerId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+        var command = new CreateEventCommand(
+            request.Title,
+            request.Description,
+            new EventDateRange(request.StartDate, request.EndDate),
+            new Location(request.Address, request.City, request.Country),
+            request.CategoryName,
+            request.CategoryDescription,
+            organizerId,
+            request.VenueId,
+            request.Capacity
+        );
+
+        string id;
+        try
+        {
+            id = await Mediator.Send(command, cancellationToken);
+        }
+        catch (Domain.Exceptions.DomainException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+
+        if (request.Image is { Length: > 0 })
+        {
+            var eventEntity = await _eventRepository.GetByIdAsync(id);
+            if (eventEntity is null)
+                return StatusCode(500, new { message = "Event was created but could not be loaded for image attach." });
+
+            var failure = await ValidateAndStoreImageAsync(eventEntity, request.Image, cancellationToken);
+            if (failure != null)
+                return failure;
+        }
+
+        return CreatedAtAction("GetById", new { id }, new { id });
+    }
+
+    // TODO: gate by auth once policy lands (currently EventOwner)
+    [Authorize(Policy = "EventOwner")]
+    [HttpPut("multipart/fullUpdate/{id}")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(6 * 1024 * 1024)]
+    public async Task<IActionResult> UpdateEventMultipart(
+        string id,
+        [FromForm] UpdateEventMultipartRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new UpdateEventCommand(
+            id,
+            request.Title,
+            request.Description,
+            new Location(request.Address, request.City, request.Country),
+            new EventDateRange(request.StartDate, request.EndDate),
+            request.Capacity
+        );
+
+        try
+        {
+            await Mediator.Send(command, cancellationToken);
+        }
+        catch (Application.Exceptions.NotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Domain.Exceptions.DomainException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+
+        if (request.Image is { Length: > 0 })
+        {
+            var eventEntity = await _eventRepository.GetByIdAsync(id);
+            if (eventEntity is null)
+                return NotFound(new { message = $"Event with id {id} not found" });
+
+            var failure = await ValidateAndStoreImageAsync(eventEntity, request.Image, cancellationToken);
+            if (failure != null)
+                return failure;
+        }
+
+        return NoContent();
+    }
+
+    private async Task<IActionResult?> ValidateAndStoreImageAsync(
+        Domain.Entities.Event eventEntity,
+        IFormFile file,
+        CancellationToken cancellationToken)
+    {
+        if (file.Length == 0)
+            return BadRequest(new { message = "Empty file upload is not allowed." });
 
         await using var stream = file.OpenReadStream();
         var result = ImageValidator.Validate(stream, file.ContentType, file.Length);
@@ -166,11 +273,11 @@ public class EventsController : BaseApiController
 
         stream.Position = 0;
         var ext = ImageValidator.GetExtension(file.ContentType);
-        var fileName = $"events/{id}-{Guid.NewGuid()}{ext}";
+        var fileName = $"events/{eventEntity.Id}-{Guid.NewGuid()}{ext}";
 
         if (!string.IsNullOrEmpty(eventEntity.PictureUrl))
         {
-            var oldKey = ExtractKeyFromUrl(eventEntity.PictureUrl);
+            var oldKey = FileStorageKeyHelper.ExtractKey(eventEntity.PictureUrl);
             if (oldKey != null)
                 await _fileStorage.DeleteAsync(oldKey, cancellationToken);
         }
@@ -180,7 +287,7 @@ public class EventsController : BaseApiController
         eventEntity.SetPictureUrl(imageUrl);
         await _eventRepository.UpdateAsync(eventEntity);
 
-        return Ok(new { imageUrl });
+        return null;
     }
 
     [AllowAnonymous]
@@ -207,7 +314,7 @@ public class EventsController : BaseApiController
 
         if (!string.IsNullOrEmpty(eventEntity.PictureUrl))
         {
-            var oldKey = ExtractKeyFromUrl(eventEntity.PictureUrl);
+            var oldKey = FileStorageKeyHelper.ExtractKey(eventEntity.PictureUrl);
             if (oldKey != null)
                 await _fileStorage.DeleteAsync(oldKey, cancellationToken);
             eventEntity.SetPictureUrl(null);
@@ -215,12 +322,5 @@ public class EventsController : BaseApiController
         }
 
         return NoContent();
-    }
-
-    private static string? ExtractKeyFromUrl(string url)
-    {
-        var uploadsIndex = url.IndexOf("/uploads/", StringComparison.OrdinalIgnoreCase);
-        if (uploadsIndex < 0) return null;
-        return url[(uploadsIndex + "/uploads/".Length)..];
     }
 }
