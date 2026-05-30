@@ -10,6 +10,7 @@ builder.Services.AddKeycloakJwtAuth(builder.Configuration);
 
 builder.WebHost.ConfigureKestrel(options =>
 {
+    options.Limits.MaxRequestBodySize = 6 * 1024 * 1024;
     options.ConfigureEndpointDefaults(listenOptions =>
     {
         listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
