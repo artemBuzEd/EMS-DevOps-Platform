@@ -101,7 +101,8 @@ public class AggregatorGrpcService
                 FullLocation = eventResponse.FullLocation,
                 organizerId = eventResponse.OrganizerId,
                 venueId = string.IsNullOrEmpty(eventResponse.VenueId) ? (int?)null : int.Parse(eventResponse.VenueId),
-                capacity = eventResponse.Capacity
+                capacity = eventResponse.Capacity,
+                pictureUrl = eventResponse.HasPictureUrl ? eventResponse.PictureUrl : null
             },
             Comments = commentsResponse.Comments.Select(c => new CommentDto
             {
