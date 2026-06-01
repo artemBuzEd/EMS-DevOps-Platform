@@ -22,7 +22,9 @@ RUN dotnet publish "EventCatalogApi.csproj" -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine
 WORKDIR /app
+RUN mkdir -p /app/uploads/events \
+    && chown -R app:app /app/uploads
 USER app
 EXPOSE 8081
-COPY --from=build /app/publish .
+COPY --chown=app:app --from=build /app/publish .
 ENTRYPOINT ["dotnet", "EventCatalogApi.dll"]

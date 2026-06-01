@@ -22,8 +22,10 @@ RUN dotnet publish "UserProfileServiceAPI.csproj" -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine
 WORKDIR /app
+RUN mkdir -p /app/uploads \
+    && chown -R app:app /app
 USER app
 EXPOSE 8080
-COPY --from=build /app/publish .
+COPY --chown=app:app --from=build /app/publish .
 ENTRYPOINT ["dotnet", "UserProfileServiceAPI.dll"]
  
