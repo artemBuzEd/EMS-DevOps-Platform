@@ -20,6 +20,15 @@ builder.WebHost.ConfigureKestrel(options =>
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy("authenticated", policy => policy.RequireAuthenticatedUser());
 
+const string FrontendCorsPolicy = "frontend";
+var frontendOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? new[] { "http://localhost:3000" };
+builder.Services.AddCors(options =>
+    options.AddPolicy(FrontendCorsPolicy, policy =>
+        policy.WithOrigins(frontendOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod()));
+
 //Swagger
 builder.Services.AddSwaggerGen();
 builder.Services.AddEndpointsApiExplorer();
@@ -43,6 +52,8 @@ if (app.Environment.IsDevelopment())
 //Service Defaults methods
 app.MapDefaultEndpoints();
 app.UseCorrelationId();
+
+app.UseCors(FrontendCorsPolicy);
 
 app.UseAuthentication();
 app.UseAuthorization();
