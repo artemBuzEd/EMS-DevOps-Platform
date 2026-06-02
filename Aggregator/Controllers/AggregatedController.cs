@@ -1,5 +1,6 @@
 using Aggregator.DTOs;
 using Aggregator.Services;
+using EventCatalogApi.Protos;
 using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -101,12 +102,13 @@ public class AggregatedController : ControllerBase
 
             var calendars = await calendarTask;
             var comments = await commentsTask;
-
-            var eventTitles = new Dictionary<string, string>();
+            
+            var eventsBasicInfos = new Dictionary<string, EventBasicInfoResponse>();
             try
             {
-                var eventIds = comments.Select(c => c.event_id).Distinct();
-                eventTitles = await _grpcService.GetEventTitlesByIdsAsync(eventIds);
+                var allEventsIds = comments.Select(c => c.event_id)
+                    .Concat(calendars.Select(c => c.event_id)).Distinct();
+                eventsBasicInfos = await _grpcService.GetEventBasicInfoByIds(allEventsIds);
             }
             catch (Exception ex)
             {
@@ -117,16 +119,34 @@ public class AggregatedController : ControllerBase
             {
                 CommentId = comment.id,
                 EventId = comment.event_id,
-                EventTitle = eventTitles.TryGetValue(comment.event_id, out var title) ? title : "Unknown Event",
+                EventTitle = eventsBasicInfos.TryGetValue(comment.event_id, out var info) ? info.Title : null,
                 CommentText = comment.comment,
+                Rating = comment.rating,
                 CreatedAt = comment.added_at,
                 IsChanged = comment.is_changed
+            });
+
+            var enrichedCalendars = calendars.Select(calendar => 
+            {
+                eventsBasicInfos.TryGetValue(calendar.event_id, out var eventInfo);
+
+                return new UserCalendarDto()
+                {
+                    CalendarId = calendar.id,
+                    UserId = calendar.user_id,
+                    EventId = calendar.event_id,
+                    EventTitle = eventInfo?.Title,
+                    AddedAt = calendar.added_at,
+                    StartDate = eventInfo?.StartDate?.ToDateTime(),
+                    EndDate = eventInfo?.EndDate?.ToDateTime(),
+                    Status = calendar.status
+                };
             });
 
             var response = new UserDashboardResponse
             {
                 User = user,
-                MyCalendars = calendars,
+                MyCalendars = enrichedCalendars,
                 MyComments = enrichedComments
             };
             

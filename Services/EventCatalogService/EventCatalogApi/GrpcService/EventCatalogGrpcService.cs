@@ -108,10 +108,12 @@ public class EventCatalogGrpcService : EventCatalog.EventCatalogBase
         var events = await _mediator.Send(query);
 
         var response = new GetEventsByIdsResponse();
-        response.Events.AddRange(events.Select(e => new EventTitleResponse
+        response.Events.AddRange(events.Select(e => new EventBasicInfoResponse
         {
             Id = e.Id,
-            Title = e.Title
+            Title = e.Title,
+            StartDate = Timestamp.FromDateTime(e.StartDate),
+            EndDate = Timestamp.FromDateTime(e.EndDate)
         }));
 
         return response;
