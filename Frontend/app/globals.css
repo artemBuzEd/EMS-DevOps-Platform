@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+/* ── Obsidian Event Logic design tokens (from DESIGN.md) ───────────── */
+@theme {
+  --color-background: #131315;
+  --color-surface: #131315;
+  --color-surface-bright: #39393b;
+  --color-surface-lowest: #0e0e10;
+  --color-surface-low: #1b1b1d;
+  --color-surface-container: #201f21;
+  --color-surface-high: #2a2a2c;
+  --color-surface-highest: #353437;
+
+  --color-on-surface: #e5e1e4;
+  --color-on-surface-variant: #c4c7c8;
+  --color-muted: #8c8f90;
+
+  --color-outline: #8e9192;
+  --color-outline-variant: #444748;
+
+  --color-primary: #ffffff;
+  --color-on-primary: #2f3131;
+
+  --color-secondary: #c1c1ff;
+  --color-on-secondary: #1200a9;
+  --color-secondary-container: #302dbe;
+  --color-on-secondary-container: #acaeff;
+
+  --color-indigo: #6466f1;
+  --color-lime: #adfa1d;
+
+  --color-error: #ffb4ab;
+  --color-error-container: #93000a;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --radius-card: 0.5rem;
+
+  --tracking-display: -0.04em;
+  --tracking-headline: -0.03em;
+}
+
+@layer base {
+  html {
+    background-color: var(--color-background);
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-on-surface);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  /* thin scrollbar to match the dark technical aesthetic */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-surface-highest);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+/* "glow" top-down gradient border used on Level-2 cards */
+.card-border {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.card-glow {
+  position: relative;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--color-surface-low), var(--color-surface-low)) padding-box,
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05)) border-box;
+}
