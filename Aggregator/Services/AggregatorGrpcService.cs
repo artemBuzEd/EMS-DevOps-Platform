@@ -70,6 +70,21 @@ public class AggregatorGrpcService
         return response.Events.ToDictionary(e => e.Id, e => e.Title);
     }
 
+    public async Task<Dictionary<string, EventBasicInfoResponse>> GetEventBasicInfoByIds(IEnumerable<string> eventIds)
+    {
+        var distinctIds = eventIds.Distinct().ToList();
+        if (distinctIds.Count == 0)
+            return new Dictionary<string, EventBasicInfoResponse>();
+        
+        _logger.LogInformation("gRPC GetEventBasicInfoByIds called for {Count} distinct event IDs", distinctIds.Count);
+        
+        var request = new GetEventsByIdsRequest();
+        request.EventIds.AddRange(distinctIds);
+        
+        var response = await _eventClient.GetEventsByIdsAsync(request);
+        return response.Events.ToDictionary(e => e.Id, e => e);
+    }
+
     public async Task<EventDetailsResponse> GetEventDetailsAsync(string eventId)
     {
         _logger.LogInformation("gRPC GetEventDetailsAsync called for: {EventId}", eventId);
