@@ -76,3 +76,14 @@
     linear-gradient(var(--color-surface-low), var(--color-surface-low)) padding-box,
     linear-gradient(to bottom, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05)) border-box;
 }
+/* Interactive Level-2 card: lift on hover by brightening the gradient border
+   (per DESIGN.md "lift … by increasing the border brightness rather than adding
+   a shadow"). */
+.card-glow-hover {
+  transition: background 200ms ease;
+}
+.card-glow-hover:hover {
+  background:
+    linear-gradient(var(--color-surface-low), var(--color-surface-low)) padding-box,
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.1)) border-box;
+}

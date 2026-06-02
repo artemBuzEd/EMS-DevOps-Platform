@@ -5,6 +5,7 @@ import type {
   Organizer,
   PagedResult,
   UpcomingEvent,
+  UserDashboardResponse,
 } from "./types";
 
 const BASE_URL =
@@ -86,6 +87,49 @@ export async function getUpcomingEvents(
   } catch {
     return [];
   }
+}
+
+// ── User dashboard ─────────────────────────────────────────────────────────
+// Cache the dashboard per user for the lifetime of the tab so navigating away
+// and back doesn't re-hit the aggregator. This is the lightweight equivalent of
+// a React Query cache without pulling in a second data layer.
+const dashboardCache = new Map<string, UserDashboardResponse>();
+
+// Primary call: profile + joined-event calendars + comment activity.
+//
+// TODO(auth): this endpoint is [Authorize] (Keycloak). For now the dev token is
+// read from NEXT_PUBLIC_DEV_BEARER_TOKEN and attached verbatim — there is no
+// login flow, refresh, logout, or role check. A real implementation needs:
+//   - an interactive Keycloak login redirect (Authorization Code + PKCE),
+//   - access-token refresh before expiry + retry on 401,
+//   - logout that clears the session,
+//   - role/scope checks (and a `sub`-vs-userId guard once this moves to
+//     /dashboard so a user can only load their own dashboard).
+// Do not ship the dev-token shortcut to production.
+export async function getUserDashboard(
+  userId: string,
+  signal?: AbortSignal,
+): Promise<UserDashboardResponse> {
+  const cached = dashboardCache.get(userId);
+  if (cached) return cached;
+
+  const token = process.env.NEXT_PUBLIC_DEV_BEARER_TOKEN;
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(
+    `${BASE_URL}/api/aggregator/user-dashboard/${encodeURIComponent(userId)}`,
+    { signal, headers },
+  );
+  if (!res.ok) {
+    throw new ApiError(
+      res.status,
+      `GET user-dashboard failed (${res.status})`,
+    );
+  }
+  const data = (await res.json()) as UserDashboardResponse;
+  dashboardCache.set(userId, data);
+  return data;
 }
 
 export { ApiError };
