@@ -35,16 +35,32 @@ public class UnitOfWork : IUnitOfWork
         {
             throw new InvalidOperationException("The transaction has not been started. [CommitTransactionAsync()]");
         }
-        await _transaction.CommitAsync(cancellationToken);
+
+        try
+        {
+            await _transaction.CommitAsync(cancellationToken);
+        }
+        finally
+        {
+            await _transaction.DisposeAsync();
+            _transaction = null;
+        }
     }
 
     public async Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
     {
         if (_transaction == null)
+            return;
+
+        try
         {
-            throw new InvalidOperationException("The transaction has not been started. [RollbackTransactionAsync()]");
+            await _transaction.RollbackAsync(cancellationToken);
         }
-        await _transaction.RollbackAsync(cancellationToken);
+        finally
+        {
+            await _transaction.DisposeAsync();
+            _transaction = null;
+        }
     }
 
     public async Task<int> CompleteAsync(CancellationToken cancellationToken = default)
