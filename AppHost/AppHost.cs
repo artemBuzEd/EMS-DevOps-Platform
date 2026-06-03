@@ -29,7 +29,12 @@ var keycloak = builder.AddContainer("keycloak", "quay.io/keycloak/keycloak", "26
     .WithEnvironment("KC_BOOTSTRAP_ADMIN_USERNAME", "admin")
     .WithEnvironment("KC_BOOTSTRAP_ADMIN_PASSWORD", keycloakAdminPassword)
     .WithEnvironment("KC_HEALTH_ENABLED", "true")
+    // LOCAL-ONLY: disable theme caching so edits to ../keycloak/themes show up
+    // on the next page load without restarting the container.
+    .WithEnvironment("KC_SPI_THEME_CACHE_THEMES", "false")
+    .WithEnvironment("KC_SPI_THEME_STATIC_MAX_AGE", "-1")
     .WithBindMount("../keycloak/realm-ems.json", "/opt/keycloak/data/import/realm-ems.json")
+    .WithBindMount("../keycloak/themes", "/opt/keycloak/themes")
     .WithArgs("start-dev", "--import-realm")
     .WaitFor(postgres);
 

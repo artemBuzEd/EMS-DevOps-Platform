@@ -1,6 +1,7 @@
 {
   "realm": "ems",
   "enabled": true,
+  "loginTheme": "ems",
   "registrationAllowed": true,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
@@ -102,13 +103,19 @@
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,
       "fullScopeAllowed": true,
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "+"
+      },
       "redirectUris": [
         "http://localhost:*",
         "http://host.docker.internal:*"
       ],
       "webOrigins": [
-        "http://localhost:*",
-        "http://host.docker.internal:*"
+        "http://localhost:3000",
+        "http://localhost:5000",
+        "http://localhost:10000",
+        "http://host.docker.internal:3000"
       ],
       "defaultClientScopes": [
         "basic",

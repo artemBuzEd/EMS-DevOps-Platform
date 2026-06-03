@@ -7,6 +7,7 @@ import type {
   UpcomingEvent,
   UserDashboardResponse,
 } from "./types";
+import { authedFetch } from "./auth/authedFetch";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000";
@@ -90,37 +91,24 @@ export async function getUpcomingEvents(
 }
 
 // ── User dashboard ─────────────────────────────────────────────────────────
-// Cache the dashboard per user for the lifetime of the tab so navigating away
-// and back doesn't re-hit the aggregator. This is the lightweight equivalent of
-// a React Query cache without pulling in a second data layer.
-const dashboardCache = new Map<string, UserDashboardResponse>();
+// The dashboard always belongs to the signed-in user: the aggregator derives
+// the user from the access token (`sub`), so no id is sent from here. Cached
+// for the lifetime of the tab so navigating away and back doesn't re-hit the
+// aggregator — a single value since there's only ever the current user.
+let dashboardCache: UserDashboardResponse | undefined;
 
-// Primary call: profile + joined-event calendars + comment activity.
-//
-// TODO(auth): this endpoint is [Authorize] (Keycloak). For now the dev token is
-// read from NEXT_PUBLIC_DEV_BEARER_TOKEN and attached verbatim — there is no
-// login flow, refresh, logout, or role check. A real implementation needs:
-//   - an interactive Keycloak login redirect (Authorization Code + PKCE),
-//   - access-token refresh before expiry + retry on 401,
-//   - logout that clears the session,
-//   - role/scope checks (and a `sub`-vs-userId guard once this moves to
-//     /dashboard so a user can only load their own dashboard).
-// Do not ship the dev-token shortcut to production.
+// Primary call: profile + joined-event calendars + comment activity. Goes
+// through authedFetch, which attaches the bearer token, refreshes it before
+// expiry, and retries once on a 401.
 export async function getUserDashboard(
-  userId: string,
   signal?: AbortSignal,
 ): Promise<UserDashboardResponse> {
-  const cached = dashboardCache.get(userId);
-  if (cached) return cached;
+  if (dashboardCache) return dashboardCache;
 
-  const token = process.env.NEXT_PUBLIC_DEV_BEARER_TOKEN;
-  const headers: Record<string, string> = { Accept: "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
-
-  const res = await fetch(
-    `${BASE_URL}/api/aggregator/user-dashboard/${encodeURIComponent(userId)}`,
-    { signal, headers },
-  );
+  const res = await authedFetch(`${BASE_URL}/api/aggregator/user-dashboard`, {
+    signal,
+    headers: { Accept: "application/json" },
+  });
   if (!res.ok) {
     throw new ApiError(
       res.status,
@@ -128,7 +116,7 @@ export async function getUserDashboard(
     );
   }
   const data = (await res.json()) as UserDashboardResponse;
-  dashboardCache.set(userId, data);
+  dashboardCache = data;
   return data;
 }
 

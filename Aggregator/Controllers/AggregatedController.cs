@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Aggregator.DTOs;
 using Aggregator.Services;
 using EventCatalogApi.Protos;
@@ -79,13 +80,20 @@ public class AggregatedController : ControllerBase
         var response = await client.GetAsync($"/api/venue/GetVenuesById/{venueId}");
         return await response.Content.ReadFromJsonAsync<VenueDto>();
     }
-
+    
     [Authorize]
-    [HttpGet("user-dashboard/{userId}")]
+    [HttpGet("user-dashboard")]
     [ProducesResponseType(typeof(UserDashboardResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetUserDashboardAsync(string userId)
+    public async Task<IActionResult> GetUserDashboardAsync()
     {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
         try
         {
             var userTask = GetUserProfileAsync(userId);
