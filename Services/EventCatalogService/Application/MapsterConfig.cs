@@ -13,10 +13,14 @@ public static class MapsterConfig
     {
         TypeAdapterConfig<Event, EventMiniDto>
             .NewConfig()
+            .Map(dest => dest.Id, src => src.Id)
             .Map(dest => dest.Title, src => src.Title)
+            .Map(dest => dest.Description, src => src.Description)
             .Map(dest => dest.StartDate, src => src.DateRange.Start)
             .Map(dest => dest.EndDate, src => src.DateRange.End)
             .Map(dest => dest.FullLocation, src => $"{src.Location.Address}, {src.Location.City}, {src.Location.Country}")
+            .Map(dest => dest.CategoryName, src => src.Category.Name)
+            .Map(dest => dest.Capacity, src => src.Capacity)
             .Map(dest => dest.PictureUrl, src => src.PictureUrl);
 
         TypeAdapterConfig<Event, EventDto>

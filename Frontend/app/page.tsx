@@ -1,79 +1,139 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { Suspense } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { getUpcomingEvents } from "@/lib/api";
-import { formatDateRange } from "@/lib/format";
-import type { UpcomingEvent } from "@/lib/types";
-import { resolveAssetUrl } from "@/lib/url";
+import { SearchHero } from "@/components/home/SearchHero";
+import { FilterSidebar } from "@/components/home/FilterSidebar";
+import { ActiveFilters } from "@/components/home/ActiveFilters";
+import { EventCard } from "@/components/home/EventCard";
+import { LoadMoreButton } from "@/components/home/LoadMoreButton";
+import {
+  CardSkeletonGrid,
+  EmptyResults,
+  ErrorState,
+  InitialEmpty,
+} from "@/components/home/ListStates";
+import { useEventListing } from "@/components/home/useEventListing";
 
 export default function HomePage() {
-  const [events, setEvents] = useState<UpcomingEvent[] | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    getUpcomingEvents(controller.signal).then(setEvents);
-    return () => controller.abort();
-  }, []);
-
   return (
     <div className="min-h-screen">
       <Navbar />
-      <main className="mx-auto max-w-[1200px] px-5 py-12 sm:px-8">
-        <h1 className="text-3xl font-semibold tracking-[var(--tracking-headline)]">
-          Upcoming Events
-        </h1>
-        <p className="mt-2 text-sm text-on-surface-variant">
-          Select an event to view its details page.
-        </p>
-
-        {events === null && (
-          <p className="mt-10 text-sm text-muted">Loading…</p>
-        )}
-        {events?.length === 0 && (
-          <p className="mt-10 text-sm text-muted">
-            No events found. Is the API gateway running on{" "}
-            {process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:10000"}?
-          </p>
-        )}
-
-        <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {events?.map((ev) => (
-            <Link
-              key={ev.id}
-              href={`/events/${ev.id}`}
-              className="group overflow-hidden rounded-[var(--radius-card)] border border-white/[0.07] bg-surface-low transition-colors hover:border-white/20"
-            >
-              <div className="h-40 w-full overflow-hidden bg-surface-container">
-                {ev.pictureUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={resolveAssetUrl(ev.pictureUrl)!}
-                    alt={ev.title}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                  />
-                ) : (
-                  <div className="h-full w-full bg-gradient-to-br from-surface-high to-black" />
-                )}
-              </div>
-              <div className="p-4">
-                <h2 className="line-clamp-2 text-base font-medium text-on-surface">
-                  {ev.title}
-                </h2>
-                <p className="mt-1 text-xs text-muted">
-                  {formatDateRange(ev.startDate, ev.endDate)}
-                </p>
-                <p className="mt-1 truncate text-xs text-on-surface-variant">
-                  {ev.fullLocation}
-                </p>
-              </div>
-            </Link>
-          ))}
-        </div>
+      <main>
+        {/* useSearchParams (inside useEventListing) requires a Suspense boundary. */}
+        <Suspense fallback={<HeroFallback />}>
+          <EventListing />
+        </Suspense>
       </main>
       <Footer />
     </div>
   );
+}
+
+function HeroFallback() {
+  return (
+    <div className="mx-auto max-w-[1200px] px-5 py-16 sm:px-8">
+      <CardSkeletonGrid />
+    </div>
+  );
+}
+
+function EventListing() {
+  const l = useEventListing();
+  const displayTotal = l.total;
+
+  const showInitialEmpty =
+    l.status === "ready" &&
+    l.visible.length === 0 &&
+    l.activeFilterCount === 0 &&
+    l.total === 0;
+  const showEmptyResults =
+    l.status === "ready" &&
+    l.visible.length === 0 &&
+    (l.activeFilterCount > 0 || l.dateError);
+
+  return (
+    <>
+      <SearchHero
+        value={l.searchInput}
+        onChange={l.setSearchInput}
+        onClear={l.clearSearch}
+      />
+
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-8 px-5 py-10 sm:px-8 lg:flex-row lg:gap-10 lg:py-12">
+        <FilterSidebar
+          filters={l.filters}
+          dateError={l.dateError}
+          setFrom={l.setFrom}
+          setTo={l.setTo}
+          toggleUpcoming={l.toggleUpcoming}
+          setCategory={l.setCategory}
+          setSort={l.setSort}
+          activeFilterCount={l.activeFilterCount}
+        />
+
+        <div className="min-w-0 flex-1">
+          <ActiveFilters
+            filters={l.filters}
+            count={l.visible.length}
+            activeFilterCount={l.activeFilterCount}
+            onRemove={l.removeFilter}
+            onClearAll={l.clearAll}
+          />
+
+          {/* Visually-hidden live region: announces the result count on change. */}
+          <p aria-live="polite" className="sr-only">
+            {l.status === "ready"
+              ? `Showing ${l.visible.length} of ${displayTotal} events`
+              : ""}
+          </p>
+
+          <div className="mt-6">
+            {l.status === "error" ? (
+              <ErrorState onRetry={l.retry} />
+            ) : l.status === "loading" ? (
+              <CardSkeletonGrid />
+            ) : showInitialEmpty ? (
+              <InitialEmpty />
+            ) : showEmptyResults ? (
+              <EmptyResults
+                summary={emptySummary(l.filters, l.dateError)}
+                onClear={l.clearAll}
+              />
+            ) : (
+              <>
+                <ul className="grid-events-wide grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {l.visible.map((event) => (
+                    <li key={event.id}>
+                      <EventCard event={event} />
+                    </li>
+                  ))}
+                </ul>
+                {l.hasMore ? (
+                  <LoadMoreButton loading={l.loadingMore} onClick={l.loadMore} />
+                ) : null}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function emptySummary(
+  filters: ReturnType<typeof useEventListing>["filters"],
+  dateError: boolean,
+): string {
+  if (dateError) return "The selected date range is invalid.";
+  const parts: string[] = [];
+  if (filters.search.trim()) parts.push(`matching “${filters.search.trim()}”`);
+  if (filters.category.trim())
+    parts.push(`in category “${filters.category.trim()}”`);
+  if (filters.upcoming) parts.push("that are upcoming");
+  if (filters.from || filters.to) parts.push("in that date range");
+  return parts.length
+    ? `No events ${parts.join(", ")}. Try removing a filter.`
+    : "Try removing a filter or searching for something else.";
 }
