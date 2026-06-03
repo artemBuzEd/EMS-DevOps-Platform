@@ -86,10 +86,15 @@ services:
       - KC_HEALTH_ENABLED=true
       - KC_HOSTNAME=http://localhost:8180
       - KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true
+      # LOCAL-ONLY: disable theme caching so edits to ./keycloak/themes show up
+      # on the next page load without restarting Keycloak.
+      - KC_SPI_THEME_CACHE_THEMES=false
+      - KC_SPI_THEME_STATIC_MAX_AGE=-1
     ports:
       - "8180:8080"
     volumes:
       - ./keycloak/realm-ems.json:/opt/keycloak/data/import/realm-ems.json:ro
+      - ./keycloak/themes:/opt/keycloak/themes:ro
     depends_on:
       keycloak-db:
         condition: service_healthy

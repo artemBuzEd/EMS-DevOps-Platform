@@ -1,0 +1,435 @@
+/* ===========================================================================
+   EMS — Obsidian Event Logic login theme
+   Restyles the inherited `keycloak`/PatternFly login templates to match the
+   EventPro dashboard (DESIGN.md / Frontend/app/globals.css). CSS-only: every
+   FreeMarker template (login, register, reset-password, MFA, IdP, terms)
+   keeps its base markup and is themed through these class hooks.
+   =========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --ems-surface: #131315;
+  --ems-surface-lowest: #0e0e10;
+  --ems-card: #1c1c1f;
+  --ems-input: #121214;
+
+  --ems-on-surface: #e5e1e4;
+  --ems-on-surface-variant: #c4c7c8;
+  --ems-muted: #8c8f90;
+
+  --ems-border: rgba(255, 255, 255, 0.1);
+  --ems-border-faint: rgba(255, 255, 255, 0.07);
+
+  --ems-primary: #ffffff;
+  --ems-on-primary: #2f3131;
+
+  --ems-indigo: #6466f1;
+  --ems-indigo-glow: rgba(101, 102, 241, 0.1);
+  --ems-secondary: #c1c1ff;
+
+  --ems-error: #ffb4ab;
+  --ems-error-container: #93000a;
+
+  --ems-radius: 4px;
+  --ems-radius-card: 8px;
+
+  --ems-font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --ems-font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* ----- Page surface (void black) ---------------------------------------- */
+html.login-pf,
+body {
+  background: var(--ems-surface) !important;
+  background-image: none !important;
+  color: var(--ems-on-surface);
+  font-family: var(--ems-font-sans);
+  height: 100%;
+  margin: 0;
+}
+
+/* Center the header + card column. (We don't load keycloak/login.css, so own
+   the layout here.) */
+.login-pf-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  width: 100%;
+  padding: 48px 16px;
+  box-sizing: border-box;
+}
+
+/* ----- Brand wordmark (matches the dashboard navbar) -------------------- */
+#kc-header {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 0 24px;
+  padding: 0;
+}
+#kc-header-wrapper {
+  padding: 0;
+  text-align: center;
+  white-space: normal;
+  line-height: 1;
+}
+.ems-brand {
+  font-family: var(--ems-font-sans);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ems-on-surface);
+}
+
+/* ----- Login card (Level-2 elevation: gradient glow border, no shadow) -- */
+.login-pf-page .card-pf {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 32px 32px 28px;
+  border: 1px solid transparent;
+  border-radius: var(--ems-radius-card);
+  background:
+    linear-gradient(var(--ems-card), var(--ems-card)) padding-box,
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05)) border-box;
+  box-shadow: none;
+}
+
+/* ----- Headline + subtitle ---------------------------------------------- */
+#kc-page-title {
+  margin: 0 0 4px;
+  font-family: var(--ems-font-sans);
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  color: var(--ems-on-surface);
+}
+.login-pf-header {
+  margin-bottom: 20px;
+}
+.ems-subtitle {
+  margin: 0 0 24px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ems-muted);
+}
+
+/* ----- Form layout ------------------------------------------------------ */
+#kc-form,
+#kc-form-wrapper {
+  width: 100%;
+}
+.form-group {
+  margin-bottom: 18px;
+}
+
+/* ----- Labels (Geist Mono, uppercase, label-sm) ------------------------- */
+.pf-c-form__label,
+label[for="username"],
+label[for="password"],
+.pf-c-form__label-text,
+#kc-form .control-label {
+  display: block;
+  margin-bottom: 8px;
+  font-family: var(--ems-font-mono) !important;
+  font-size: 12px !important;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ems-on-surface-variant) !important;
+}
+
+/* ----- Inputs ----------------------------------------------------------- */
+.pf-c-form-control,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+select,
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  height: 42px;
+  padding: 10px 12px;
+  background: var(--ems-input) !important;
+  border: 1px solid var(--ems-border) !important;
+  border-radius: var(--ems-radius) !important;
+  color: var(--ems-on-surface) !important;
+  font-family: var(--ems-font-sans);
+  font-size: 14px;
+  line-height: 1.4;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  /* kill PatternFly's bottom-border-only treatment */
+  --pf-c-form-control--BorderTopColor: var(--ems-border);
+  --pf-c-form-control--BorderRightColor: var(--ems-border);
+  --pf-c-form-control--BorderBottomColor: var(--ems-border);
+  --pf-c-form-control--BorderLeftColor: var(--ems-border);
+}
+textarea {
+  height: auto;
+  min-height: 84px;
+}
+.pf-c-form-control::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: var(--ems-muted);
+  opacity: 1;
+}
+
+/* Focus: indigo border + soft outer glow (DESIGN.md) */
+.pf-c-form-control:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+  border-color: var(--ems-indigo) !important;
+  box-shadow: 0 0 0 3px var(--ems-indigo-glow) !important;
+}
+
+/* ----- Password input group + visibility toggle ------------------------- */
+.pf-c-input-group {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  background: transparent !important;
+  border: none !important;
+}
+.pf-c-input-group .pf-c-form-control {
+  flex: 1 1 auto;
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-right: none !important;
+}
+.pf-c-input-group .pf-c-button.pf-m-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  background: var(--ems-input) !important;
+  border: 1px solid var(--ems-border) !important;
+  border-left: none !important;
+  border-top-right-radius: var(--ems-radius) !important;
+  border-bottom-right-radius: var(--ems-radius) !important;
+  color: var(--ems-muted) !important;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+.pf-c-input-group .pf-c-button.pf-m-control:hover {
+  color: var(--ems-on-surface) !important;
+}
+.pf-c-input-group:focus-within .pf-c-form-control,
+.pf-c-input-group:focus-within .pf-c-button.pf-m-control {
+  border-color: var(--ems-indigo) !important;
+}
+
+/* ----- Primary button (Sign In / Register / Submit) --------------------- */
+#kc-form-buttons {
+  margin-top: 24px;
+  margin-bottom: 0;
+}
+.pf-c-button.pf-m-primary,
+input[type="submit"].pf-c-button,
+#kc-login,
+.pf-c-button.pf-m-primary.pf-m-block {
+  display: block;
+  width: 100%;
+  height: 44px;
+  padding: 0 20px;
+  background: var(--ems-primary) !important;
+  color: var(--ems-on-primary) !important;
+  border: none !important;
+  border-radius: var(--ems-radius) !important;
+  font-family: var(--ems-font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 150ms ease;
+}
+.pf-c-button.pf-m-primary:hover,
+#kc-login:hover {
+  opacity: 0.9;
+}
+.pf-c-button.pf-m-primary:focus-visible,
+#kc-login:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ems-indigo-glow);
+}
+
+/* ----- Links: forgot password, register, back-to-login, info ------------ */
+#kc-form-options a,
+#kc-registration a,
+#kc-registration-container a,
+#kc-info a,
+.login-pf-signup a,
+#kc-content a {
+  color: var(--ems-indigo);
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+#kc-form-options a:hover,
+#kc-registration a:hover,
+#kc-info a:hover,
+.login-pf-signup a:hover,
+#kc-content a:hover {
+  color: var(--ems-secondary);
+  text-decoration: underline;
+}
+
+/* forgot-password row + remember-me */
+#kc-form-options {
+  display: flex;
+  align-items: center;
+}
+.pf-c-form__group.login-pf-settings,
+.form-group.login-pf-settings {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.checkbox label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--ems-font-sans);
+  font-size: 13px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ems-on-surface-variant);
+}
+input[type="checkbox"] {
+  accent-color: var(--ems-indigo);
+  width: 15px;
+  height: 15px;
+}
+
+/* ----- Registration / info footer --------------------------------------- */
+#kc-info,
+#kc-registration-container,
+.login-pf-signup {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--ems-border-faint);
+  text-align: center;
+  font-size: 14px;
+  color: var(--ems-muted);
+}
+
+/* ----- Alerts / server messages ----------------------------------------- */
+.pf-c-alert.pf-m-inline,
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  border: none !important;
+  border-radius: var(--ems-radius);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.pf-c-alert.pf-m-danger,
+.alert-error {
+  background: var(--ems-error-container) !important;
+  color: var(--ems-error) !important;
+}
+.pf-c-alert.pf-m-danger .pf-c-alert__title,
+.alert-error .kc-feedback-text {
+  color: var(--ems-error) !important;
+}
+.pf-c-alert.pf-m-success,
+.alert-success {
+  background: rgba(173, 250, 29, 0.12) !important;
+  color: #adfa1d !important;
+}
+.pf-c-alert.pf-m-warning,
+.pf-c-alert.pf-m-info,
+.alert-warning,
+.alert-info {
+  background: var(--ems-surface-lowest) !important;
+  color: var(--ems-on-surface-variant) !important;
+}
+.pf-c-alert__icon { display: none; }
+
+/* ----- Per-field validation --------------------------------------------- */
+#input-error,
+.pf-c-form__helper-text.pf-m-error,
+.kc-feedback-text {
+  display: block;
+  margin-top: 6px;
+  color: var(--ems-error) !important;
+  font-family: var(--ems-font-sans);
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.has-error .pf-c-form-control,
+.pf-c-form-control[aria-invalid="true"] {
+  border-color: var(--ems-error) !important;
+}
+.required,
+.pf-c-form__label-required {
+  color: var(--ems-error);
+}
+
+/* ----- Social / IdP buttons (secondary button style) -------------------- */
+.kc-social-links .pf-c-button,
+.kc-social-item,
+#kc-social-providers .pf-c-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 42px;
+  margin-top: 10px;
+  background: transparent !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: var(--ems-radius) !important;
+  color: var(--ems-on-surface) !important;
+  font-family: var(--ems-font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  transition: border-color 150ms ease;
+}
+.kc-social-links .pf-c-button:hover,
+#kc-social-providers .pf-c-button:hover {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+#kc-social-providers hr {
+  border: none;
+  border-top: 1px solid var(--ems-border-faint);
+  margin: 24px 0 16px;
+}
+#kc-social-providers h2 {
+  font-size: 12px;
+  font-family: var(--ems-font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ems-muted);
+  text-align: center;
+}
+
+/* ----- Locale dropdown (top-right) -------------------------------------- */
+#kc-locale ul {
+  background: var(--ems-card);
+  border: 1px solid var(--ems-border);
+  border-radius: var(--ems-radius);
+}
+#kc-locale-dropdown a,
+#kc-current-locale-link {
+  color: var(--ems-on-surface-variant);
+  background: transparent;
+  border: none;
+}
+
+/* ----- "Try another way" / generic secondary actions -------------------- */
+#kc-select-try-another-way-form a {
+  color: var(--ems-indigo);
+}

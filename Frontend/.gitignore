@@ -6,3 +6,6 @@ next-env.d.ts
 .env*.local
 *.tsbuildinfo
 .DS_Store
+
+# Generated at predev/prebuild by scripts/gen-silent-check-sso.mjs
+/public/silent-check-sso.html
