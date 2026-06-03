@@ -84,3 +84,10 @@ export const StarIcon = (p: IconProps) => (
     <path d="M12 2.5 14.9 8.4l6.6.96-4.75 4.64 1.12 6.54L12 17.6 6.13 20.6l1.12-6.54L2.5 9.36 9.1 8.4 12 2.5Z" />
   </svg>
 );
+
+export const LockIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <rect x="3" y="11" width="18" height="11" rx="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);

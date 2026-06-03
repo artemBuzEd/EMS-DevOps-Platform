@@ -85,7 +85,7 @@ public class UserEventCalendarController : ControllerBase
             return Unauthorized();
 
         var calendars = await _userEventCalendarService.CreateAsync(userId, dto, cancellationToken);
-        return CreatedAtAction(nameof(GetEventCalendarById), new {id = calendars.id}, calendars);
+        return CreatedAtAction(nameof(GetEventCalendarById), new { calendarId = calendars.id }, calendars);
     }
 
     [Authorize]
