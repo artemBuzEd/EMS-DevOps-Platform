@@ -1,6 +1,7 @@
 {
   "realm": "ems",
   "enabled": true,
+  "sslRequired": "none",
   "loginTheme": "ems",
   "registrationAllowed": true,
   "loginWithEmailAllowed": true,

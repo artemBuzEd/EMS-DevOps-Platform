@@ -108,12 +108,19 @@ public class EventRepository : IEventRepository
     {
         var now = DateTime.UtcNow;
         
-        var filter = Builders<Event>.Filter.And(
-            Builders<Event>.Filter.Regex(e => e.Category.Name,
-                new MongoDB.Bson.BsonRegularExpression(categoryName, "i")),
-            Builders<Event>.Filter.Gte("dateRange.start", now)
-        );
-        
+        var filter = Builders<Event>.Filter.Gte("dateRange.start", now);
+
+        if (!string.IsNullOrWhiteSpace(categoryName))
+        {
+
+
+            filter = Builders<Event>.Filter.And(
+                filter,
+                Builders<Event>.Filter.Regex(e => e.Category.Name, 
+                    new MongoDB.Bson.BsonRegularExpression(categoryName, "i"))
+            );
+        }
+
         var totalCount = await _context.Events.CountDocumentsAsync(filter: filter);
         
         var events = await _context.Events
