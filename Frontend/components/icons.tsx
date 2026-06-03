@@ -91,3 +91,22 @@ export const LockIcon = (p: IconProps) => (
     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
   </svg>
 );
+
+export const CloseIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M18 6 6 18M6 6l12 12" />
+  </svg>
+);
+
+export const SlidersIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />
+  </svg>
+);
+
+// Spinning loader. `animate-spin` is applied by the caller.
+export const SpinnerIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+  </svg>
+);

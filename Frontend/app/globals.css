@@ -41,6 +41,15 @@
   --tracking-headline: -0.03em;
 }
 
+/* 4-column event grid on wide screens. Tailwind's 2xl is 1536px, but the event
+   listing should go to 4 columns at ≥1440px, so this exact breakpoint is added
+   as a small utility rather than via an arbitrary variant. */
+@media (min-width: 1440px) {
+  .grid-events-wide {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 @layer base {
   html {
     background-color: var(--color-background);

@@ -62,10 +62,16 @@ export interface EventCatalogEvent {
   categoryName: string;
 }
 
-// GET /api/events/upcoming (paged list) -> PagedResult<EventDto>
-// Uses the "upcoming" endpoint because the plain /api/events EventMiniDto omits id,
-// and we need the id to link through to the details page.
-export interface UpcomingEvent {
+// Shape returned by every EventsController listing/search endpoint the public
+// home page consumes:
+//   GET /api/events                       -> PagedResult<EventMiniDto>
+//   GET /api/events/upcoming              -> PagedResult<EventDto>
+//   GET /api/events/searchText/{text}     -> EventMiniDto[]
+//   GET /api/events/dateRange/{from}/{to} -> EventDto[]
+// EventMiniDto was widened (Id/Description/CategoryName/Capacity added backend-side)
+// so every endpoint yields the same fields — cards are uniform and all carry the
+// id needed to link through to /events/{id}.
+export interface EventListItem {
   id: string;
   title: string;
   description: string;

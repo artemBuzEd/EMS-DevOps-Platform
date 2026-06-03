@@ -1,10 +1,10 @@
 import type {
   EventCatalogEvent,
   EventDetails,
+  EventListItem,
   EventWithOrganizer,
   Organizer,
   PagedResult,
-  UpcomingEvent,
   UserDashboardResponse,
 } from "./types";
 import { authedFetch } from "./auth/authedFetch";
@@ -75,19 +75,75 @@ export async function getCategory(
   }
 }
 
-// Home page listing (fail-soft to empty).
-export async function getUpcomingEvents(
-  signal?: AbortSignal,
-): Promise<UpcomingEvent[]> {
-  try {
-    const data = await getJson<PagedResult<UpcomingEvent>>(
-      `/api/events/upcoming?pageNumber=1&pageSize=12`,
-      signal,
-    );
-    return data.items ?? [];
-  } catch {
-    return [];
+// ── Public event listing (home page `/`) ────────────────────────────────────
+// All token-free via getJson — the page is public, so we deliberately do NOT go
+// through authedFetch (no Authorization header is sent for anonymous visitors).
+//
+// Caching: a tiny time-boxed in-memory cache keyed by the full request path.
+// The app uses plain fetch (not React Query/SWR), so we keep that pattern and
+// implement just enough caching to satisfy "no re-fetch on tab refocus unless
+// stale (>5 min)". A repeated identical request within the TTL returns the
+// cached value instead of hitting the network; nothing re-fetches on focus
+// because we never attach a focus listener.
+const LIST_TTL_MS = 5 * 60 * 1000;
+const listCache = new Map<string, { ts: number; data: unknown }>();
+
+async function getListJson<T>(path: string, signal?: AbortSignal): Promise<T> {
+  const hit = listCache.get(path);
+  if (hit && Date.now() - hit.ts < LIST_TTL_MS) {
+    return hit.data as T;
   }
+  const data = await getJson<T>(path, signal);
+  listCache.set(path, { ts: Date.now(), data });
+  return data;
+}
+
+// Default landing: paginated list. EventMiniDto (widened backend-side to carry id).
+export function getEvents(
+  pageNumber: number,
+  pageSize: number,
+  signal?: AbortSignal,
+): Promise<PagedResult<EventListItem>> {
+  return getListJson<PagedResult<EventListItem>>(
+    `/api/events?pageNumber=${pageNumber}&pageSize=${pageSize}`,
+    signal,
+  );
+}
+
+// "Upcoming only" toggle: paginated list of events that haven't started yet.
+export function getUpcomingEvents(
+  pageNumber: number,
+  pageSize: number,
+  signal?: AbortSignal,
+): Promise<PagedResult<EventListItem>> {
+  return getListJson<PagedResult<EventListItem>>(
+    `/api/events/upcoming?pageNumber=${pageNumber}&pageSize=${pageSize}`,
+    signal,
+  );
+}
+
+// Text search. Returns a full (non-paged) list — no pageNumber/pageSize accepted.
+export function searchEvents(
+  text: string,
+  signal?: AbortSignal,
+): Promise<EventListItem[]> {
+  return getListJson<EventListItem[]>(
+    `/api/events/searchText/${encodeURIComponent(text)}`,
+    signal,
+  );
+}
+
+// Date range. Returns a full (non-paged) list. Dates are ISO strings; the route
+// binds them to DateTime server-side.
+export function getEventsByDateRange(
+  fromIso: string,
+  toIso: string,
+  signal?: AbortSignal,
+): Promise<EventListItem[]> {
+  return getListJson<EventListItem[]>(
+    `/api/events/dateRange/${encodeURIComponent(fromIso)}/${encodeURIComponent(toIso)}`,
+    signal,
+  );
 }
 
 // ── User dashboard ─────────────────────────────────────────────────────────
