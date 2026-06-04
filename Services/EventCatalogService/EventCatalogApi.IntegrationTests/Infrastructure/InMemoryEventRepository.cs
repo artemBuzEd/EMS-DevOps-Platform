@@ -61,4 +61,12 @@ public class InMemoryEventRepository : IEventRepository
 
     public Task<IEnumerable<Event>> GetByIdsAsync(IEnumerable<string> ids) =>
         Task.FromResult<IEnumerable<Event>>(_store.Values.Where(e => ids.Contains(e.Id)));
+
+    public Task<IEnumerable<string>> GetDistinctCategoryNamesAsync() =>
+        Task.FromResult<IEnumerable<string>>(
+            _store.Values
+                .Select(e => e.Category.Name)
+                .Distinct()
+                .OrderBy(n => n)
+                .ToList());
 }
