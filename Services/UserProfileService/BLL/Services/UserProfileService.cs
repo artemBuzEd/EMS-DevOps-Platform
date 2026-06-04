@@ -37,7 +37,7 @@ public class UserProfileService : IUserProfileService
 
     public async Task<UserProfileResponceDTO> GetUserByIdAsync(string userId)
     {
-        string cacheKey = $"userProfile_userId:{userId}";
+        string cacheKey = ProfileCacheKey(userId);
         var userProfile = await _cache.GetOrCreateAsync(cacheKey, async token =>
         {
             var userProfiles = await _unitOfWork.UserProfileRepository.GetByIdAsync(userId);
@@ -53,7 +53,7 @@ public class UserProfileService : IUserProfileService
 
     public async Task<bool> ExistsAsync(string userId)
     {
-        string cacheKey = $"userProfile_userId:{userId}";
+        string cacheKey = ProfileCacheKey(userId);
         var userProfile = await _cache.GetOrCreateAsync(cacheKey, async token =>
         {
             return await _unitOfWork.UserProfileRepository.GetByIdAsync(userId);
@@ -101,6 +101,9 @@ public class UserProfileService : IUserProfileService
             await _unitOfWork.UserProfileRepository.UpdateAsync(userProfileToChange);
             await _unitOfWork.CompleteAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+            // Invalidate the cached profile so the next read returns the new values.
+            await _cache.RemoveAsync(ProfileCacheKey(userId), cancellationToken);
         }
         catch (NotFoundException)
         {
@@ -132,6 +135,8 @@ public class UserProfileService : IUserProfileService
             await _unitOfWork.UserProfileRepository.DeleteAsync(userProfileToDelete);
             await _unitOfWork.CompleteAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
+            
+            await _cache.RemoveAsync(ProfileCacheKey(userId), cancellationToken);
         }
         catch (NotFoundException)
         {
@@ -156,7 +161,7 @@ public class UserProfileService : IUserProfileService
             await _unitOfWork.CompleteAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
-            var cacheKey = $"userProfile_userId:{userId}";
+            var cacheKey = ProfileCacheKey(userId);
             await _cache.RemoveAsync(cacheKey, cancellationToken);
         }
         catch (NotFoundException)
@@ -169,6 +174,10 @@ public class UserProfileService : IUserProfileService
             throw new ApplicationException($"Error updating avatar for user with id: {userId} " + ex.Message);
         }
     }
+
+    // Single source for the profile cache key so every read and every write evict the
+    // same entry. GetUserByIdAsync/ExistsAsync populate it; all mutations must clear it.
+    private static string ProfileCacheKey(string userId) => $"userProfile_userId:{userId}";
 
     private async Task<UserProfile> isExists(string userId)
     {

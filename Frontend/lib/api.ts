@@ -6,6 +6,8 @@ import type {
   Organizer,
   PagedResult,
   UserDashboardResponse,
+  UserProfileResponse,
+  UserProfileUpdateRequest,
 } from "./types";
 import { authedFetch } from "./auth/authedFetch";
 
@@ -174,6 +176,85 @@ export async function getUserDashboard(
   const data = (await res.json()) as UserDashboardResponse;
   dashboardCache = data;
   return data;
+}
+
+// ── Edit Profile (/settings/profile) ─────────────────────────────────────────
+// The page always edits the *current* user — the caller passes the id from
+// keycloak.tokenParsed.sub. The backend additionally enforces that this id matches
+// the token claim, so a tampered id is rejected server-side (403). No caching here:
+// edits must always reflect the latest server state.
+const PROFILE_BASE = `${BASE_URL}/api/users/UserProfile`;
+
+export async function getUserProfile(
+  userId: string,
+  signal?: AbortSignal,
+): Promise<UserProfileResponse> {
+  const res = await authedFetch(`${PROFILE_BASE}/${encodeURIComponent(userId)}`, {
+    signal,
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) {
+    throw new ApiError(res.status, `GET UserProfile failed (${res.status})`);
+  }
+  return (await res.json()) as UserProfileResponse;
+}
+
+export async function updateUserProfile(
+  userId: string,
+  body: UserProfileUpdateRequest,
+  signal?: AbortSignal,
+): Promise<void> {
+  const res = await authedFetch(`${PROFILE_BASE}/${encodeURIComponent(userId)}`, {
+    method: "PUT",
+    signal,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    throw new ApiError(res.status, `PUT UserProfile failed (${res.status})`);
+  }
+}
+
+// multipart/form-data, field name `file` (per backend). Returns the stored image URL.
+export async function uploadAvatar(
+  userId: string,
+  file: File,
+  signal?: AbortSignal,
+): Promise<string> {
+  const form = new FormData();
+  form.append("file", file);
+  // Note: do NOT set Content-Type — the browser sets the multipart boundary itself.
+  const res = await authedFetch(`${PROFILE_BASE}/${encodeURIComponent(userId)}/avatar`, {
+    method: "POST",
+    signal,
+    body: form,
+  });
+  if (!res.ok) {
+    throw new ApiError(res.status, `POST avatar failed (${res.status})`);
+  }
+  const data = (await res.json()) as { imageUrl: string };
+  return data.imageUrl;
+}
+
+export async function deleteAvatar(
+  userId: string,
+  signal?: AbortSignal,
+): Promise<void> {
+  const res = await authedFetch(`${PROFILE_BASE}/${encodeURIComponent(userId)}/avatar`, {
+    method: "DELETE",
+    signal,
+  });
+  if (!res.ok) {
+    throw new ApiError(res.status, `DELETE avatar failed (${res.status})`);
+  }
+}
+
+// Avatars are served as relative paths (`/uploads/users/...`) from the gateway;
+// resolve them against the API base so <img> loads cross-origin in dev.
+export function mediaUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  if (/^https?:\/\//i.test(url)) return url;
+  return `${BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
 }
 
 export { ApiError };

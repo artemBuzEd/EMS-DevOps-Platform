@@ -1,24 +1,40 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { BellIcon, SearchIcon, SettingsIcon } from "./icons";
 import { useAuth } from "@/lib/auth/useAuth";
+import { useNavGuard } from "./profile/navGuard";
 
 const NAV = ["Events", "Venues", "Schedule", "Resources"];
 
 export function Navbar() {
+  const router = useRouter();
+  const guard = useNavGuard();
+
+  // All in-app navigation passes through the guard so the Edit Profile page can warn
+  // about unsaved changes before the route changes. Elsewhere the guard always allows.
+  function navigate(href: string) {
+    if (guard()) router.push(href);
+  }
+
   return (
     <header className="sticky top-0 z-50 border-b border-white/[0.07] bg-surface/80 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-[1200px] items-center gap-6 px-5 sm:px-8">
-        <Link href="/" className="text-base font-semibold tracking-[-0.02em]">
+        <button
+          type="button"
+          onClick={() => navigate("/")}
+          className="text-base font-semibold tracking-[-0.02em]"
+        >
           EventPro
-        </Link>
+        </button>
 
         <nav className="hidden items-center gap-5 md:flex">
           {NAV.map((item, i) => (
-            <span
+            <button
               key={item}
+              type="button"
+              onClick={() => navigate("/")}
               className={`text-sm ${
                 i === 0
                   ? "text-on-surface"
@@ -26,7 +42,7 @@ export function Navbar() {
               } cursor-pointer transition-colors`}
             >
               {item}
-            </span>
+            </button>
           ))}
         </nav>
 
@@ -42,7 +58,9 @@ export function Navbar() {
             <BellIcon />
           </button>
           <button
+            type="button"
             aria-label="Settings"
+            onClick={() => navigate("/settings/profile")}
             className="text-on-surface-variant transition-colors hover:text-on-surface"
           >
             <SettingsIcon />
@@ -83,6 +101,13 @@ function UserMenu({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const guard = useNavGuard();
+
+  function go(href: string) {
+    setOpen(false);
+    if (guard()) router.push(href);
+  }
 
   // Close on outside click / Escape.
   useEffect(() => {
@@ -121,17 +146,26 @@ function UserMenu({
           <div className="border-b border-white/[0.07] px-4 py-3">
             <p className="truncate text-sm font-medium text-on-surface">{name}</p>
           </div>
-          <Link
-            href="/dashboard"
-            role="menuitem"
-            onClick={() => setOpen(false)}
-            className="block px-4 py-2 text-sm text-on-surface-variant transition-colors hover:bg-white/[0.04] hover:text-on-surface"
-          >
-            Dashboard
-          </Link>
           <button
             role="menuitem"
-            onClick={() => logout({ redirectUri: window.location.origin })}
+            onClick={() => go("/dashboard")}
+            className="block w-full px-4 py-2 text-left text-sm text-on-surface-variant transition-colors hover:bg-white/[0.04] hover:text-on-surface"
+          >
+            Dashboard
+          </button>
+          <button
+            role="menuitem"
+            onClick={() => go("/settings/profile")}
+            className="block w-full px-4 py-2 text-left text-sm text-on-surface-variant transition-colors hover:bg-white/[0.04] hover:text-on-surface"
+          >
+            Edit Profile
+          </button>
+          <button
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              if (guard()) logout({ redirectUri: window.location.origin });
+            }}
             className="block w-full px-4 py-2 text-left text-sm text-on-surface-variant transition-colors hover:bg-white/[0.04] hover:text-on-surface"
           >
             Sign out

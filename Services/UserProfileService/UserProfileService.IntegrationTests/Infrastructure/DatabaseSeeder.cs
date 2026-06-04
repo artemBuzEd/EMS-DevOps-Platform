@@ -28,6 +28,17 @@ public static class DatabaseSeeder
                 bio = "Another user",
                 birth_date = new DateTime(1998, 5, 10),
                 created_at = DateTime.UtcNow
+            },
+            // The id the TestAuthHandler issues as NameIdentifier — owner-only endpoints
+            // (PUT, avatar upload) require the route id to match the caller's token.
+            new UserProfile
+            {
+                user_id = TestAuthHandler.DefaultSub,
+                first_name = "Test",
+                last_name = "User",
+                bio = "The signed-in test user",
+                birth_date = new DateTime(1995, 3, 20),
+                created_at = DateTime.UtcNow
             }
         );
 

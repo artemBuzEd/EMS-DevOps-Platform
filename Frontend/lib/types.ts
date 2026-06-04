@@ -137,3 +137,25 @@ export interface UserDashboardResponse {
   myCalendars: UserCalendar[];
   myComments: UserComment[];
 }
+
+// ── Edit Profile (/settings/profile) ─────────────────────────────────────────
+// GET /api/users/UserProfile/{userId} -> UserProfileResponceDTO (snake_case wire).
+// Note: `birth_date` is a non-nullable C# DateTime, so a never-set value arrives as
+// the .NET default ("0001-01-01T00:00:00"), NOT JSON null — see isUnsetDate().
+export interface UserProfileResponse {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  bio: string;
+  birth_date: string; // ISO 8601
+  created_at: string; // ISO 8601
+  avatar_url: string | null;
+}
+
+// PUT /api/users/UserProfile/{userId} body -> UserProfileUpdateRequestDTO.
+export interface UserProfileUpdateRequest {
+  first_name: string;
+  last_name: string;
+  bio: string;
+  birth_date: string; // ISO 8601
+}

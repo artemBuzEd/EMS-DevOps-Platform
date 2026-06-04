@@ -11,6 +11,9 @@ public class AvatarUploadTests : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly HttpClient _client;
 
+    // Avatar upload is owner-only: the route id must match the test principal's token.
+    private const string Sub = TestAuthHandler.DefaultSub;
+
     public AvatarUploadTests(CustomWebApplicationFactory factory)
     {
         factory.InitializeDb();
@@ -46,7 +49,7 @@ public class AvatarUploadTests : IClassFixture<CustomWebApplicationFactory>
         using var form = new MultipartFormDataContent();
         form.Add(CreateMinimalPng(), "file", "avatar.png");
 
-        var response = await _client.PostAsync("/api/users/UserProfile/1/avatar", form);
+        var response = await _client.PostAsync($"/api/users/UserProfile/{Sub}/avatar", form);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
@@ -55,14 +58,16 @@ public class AvatarUploadTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
-    public async Task UploadAvatar_NonExistentUser_ReturnsNotFound()
+    public async Task UploadAvatar_OtherUsersProfile_ReturnsForbidden()
     {
+        // The test principal is "test-user-sub"; uploading to user "1" must be rejected
+        // (upload is owner-only — no admin bypass).
         using var form = new MultipartFormDataContent();
         form.Add(CreateMinimalPng(), "file", "avatar.png");
 
-        var response = await _client.PostAsync("/api/users/UserProfile/999/avatar", form);
+        var response = await _client.PostAsync("/api/users/UserProfile/1/avatar", form);
 
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
     [Fact]
@@ -75,7 +80,7 @@ public class AvatarUploadTests : IClassFixture<CustomWebApplicationFactory>
         using var form = new MultipartFormDataContent();
         form.Add(content, "file", "malware.exe");
 
-        var response = await _client.PostAsync("/api/users/UserProfile/1/avatar", form);
+        var response = await _client.PostAsync($"/api/users/UserProfile/{Sub}/avatar", form);
 
         response.StatusCode.Should().Be(HttpStatusCode.UnsupportedMediaType);
     }
@@ -91,7 +96,7 @@ public class AvatarUploadTests : IClassFixture<CustomWebApplicationFactory>
         using var form = new MultipartFormDataContent();
         form.Add(content, "file", "not-a-real-image.jpg");
 
-        var response = await _client.PostAsync("/api/users/UserProfile/1/avatar", form);
+        var response = await _client.PostAsync($"/api/users/UserProfile/{Sub}/avatar", form);
 
         response.StatusCode.Should().Be(HttpStatusCode.UnsupportedMediaType);
     }
@@ -101,9 +106,9 @@ public class AvatarUploadTests : IClassFixture<CustomWebApplicationFactory>
     {
         using var form = new MultipartFormDataContent();
         form.Add(CreateMinimalPng(), "file", "avatar.png");
-        await _client.PostAsync("/api/users/UserProfile/1/avatar", form);
+        await _client.PostAsync($"/api/users/UserProfile/{Sub}/avatar", form);
 
-        var response = await _client.GetAsync("/api/users/UserProfile/1/avatar");
+        var response = await _client.GetAsync($"/api/users/UserProfile/{Sub}/avatar");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
@@ -115,12 +120,12 @@ public class AvatarUploadTests : IClassFixture<CustomWebApplicationFactory>
     {
         using var form = new MultipartFormDataContent();
         form.Add(CreateMinimalPng(), "file", "avatar.png");
-        await _client.PostAsync("/api/users/UserProfile/1/avatar", form);
+        await _client.PostAsync($"/api/users/UserProfile/{Sub}/avatar", form);
 
-        var deleteResponse = await _client.DeleteAsync("/api/users/UserProfile/1/avatar");
+        var deleteResponse = await _client.DeleteAsync($"/api/users/UserProfile/{Sub}/avatar");
         deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        var getResponse = await _client.GetAsync("/api/users/UserProfile/1/avatar");
+        var getResponse = await _client.GetAsync($"/api/users/UserProfile/{Sub}/avatar");
         getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
@@ -129,9 +134,9 @@ public class AvatarUploadTests : IClassFixture<CustomWebApplicationFactory>
     {
         using var form = new MultipartFormDataContent();
         form.Add(CreateMinimalPng(), "file", "avatar.png");
-        await _client.PostAsync("/api/users/UserProfile/1/avatar", form);
+        await _client.PostAsync($"/api/users/UserProfile/{Sub}/avatar", form);
 
-        var response = await _client.GetAsync("/api/users/UserProfile/1");
+        var response = await _client.GetAsync($"/api/users/UserProfile/{Sub}");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<Dictionary<string, object>>();
         body.Should().ContainKey("avatar_url");
