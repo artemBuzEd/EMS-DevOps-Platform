@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebApplication1.Controllers;
+
+[Authorize]
 [ApiController]
 [Route("api/users/[controller]")]
 public class UserCommentController : ControllerBase
@@ -59,8 +61,7 @@ public class UserCommentController : ControllerBase
         var comment = await _userCommentService.GetById(commentId);
         return Ok(comment);
     }
-
-    [Authorize]
+    
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -75,8 +76,7 @@ public class UserCommentController : ControllerBase
         var comment = await _userCommentService.CreateAsync(userId, dto, cancellationToken);
         return CreatedAtAction(nameof(GetByCommentId), new {commentId = comment.id}, comment);
     }
-
-    [Authorize]
+    
     [HttpPut("{commentId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -87,8 +87,7 @@ public class UserCommentController : ControllerBase
         await _userCommentService.UpdateAsync(commentId, dto, cancellationToken);
         return NoContent();
     }
-
-    [Authorize]
+    
     [HttpDelete("{commentId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
