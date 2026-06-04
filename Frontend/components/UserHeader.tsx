@@ -1,24 +1,11 @@
 import type { UserProfile } from "@/lib/types";
 import { initial } from "@/lib/format";
-import { LockIcon } from "./icons";
-
-const bornFmt = new Intl.DateTimeFormat("en-US", {
-  month: "long",
-  day: "numeric",
-  year: "numeric",
-});
-
-function formatBorn(iso: string): string | null {
-  const d = new Date(iso);
-  return isNaN(d.getTime()) ? null : bornFmt.format(d);
-}
 
 export function UserHeader({ user }: { user: UserProfile }) {
   const fullName = [user.first_name, user.last_name]
     .filter(Boolean)
     .join(" ")
     .trim();
-  const born = formatBorn(user.birth_date);
 
   return (
     <header className="mx-auto max-w-[1200px] px-5 pt-16 sm:px-8">
@@ -40,13 +27,6 @@ export function UserHeader({ user }: { user: UserProfile }) {
         <p className="mt-6 max-w-[680px] text-[16px] leading-[1.6] text-on-surface-variant">
           {user.bio}
         </p>
-      )}
-
-      {born && (
-        <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mono text-[12px] tracking-[0.02em] text-on-surface-variant">
-          <LockIcon aria-hidden="true" width={13} height={13} className="text-muted" />
-          <span>Born {born}</span>
-        </div>
       )}
     </header>
   );

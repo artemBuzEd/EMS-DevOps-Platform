@@ -41,8 +41,9 @@ export function EventStatusCard({
   endDate: string;
 }) {
   const { authenticated, login } = useAuth();
-  const status = deriveStatus(registered, capacity, endDate);
-  const pct = capacity > 0 ? (registered / capacity) * 100 : 0;
+  const [registeredInternal, setRegisteredInternal] = useState<number>(registered);
+  const status = deriveStatus(registeredInternal, capacity, endDate);
+  const pct = capacity > 0 ? (registeredInternal / capacity) * 100 : 0;
 
   const [reg, setReg] = useState<RegState>({ kind: "idle" });
   const [toast, setToast] = useState<string | null>(null);
@@ -60,6 +61,7 @@ export function EventStatusCard({
     try {
       const chosen = await registerForEvent(eventId);
       setReg({ kind: "done", status: chosen });
+      setRegisteredInternal(prev => prev + 1)
       setToast(
         chosen === "Registered"
           ? "You're registered for this event."
@@ -92,7 +94,7 @@ export function EventStatusCard({
         <div className="mb-2 flex items-center justify-between text-sm">
           <span className="text-on-surface-variant">Capacity</span>
           <span className="text-on-surface">
-            {formatNumber(registered)} / {formatNumber(capacity)}
+            {formatNumber(registeredInternal)} / {formatNumber(capacity)}
           </span>
         </div>
         <ProgressBar value={pct} />

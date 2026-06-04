@@ -192,7 +192,7 @@ function UserMenu({
       {open && (
         <div
           role="menu"
-          className="card-glow absolute right-0 mt-2 w-56 overflow-hidden rounded-[var(--radius-card)] py-1 shadow-xl"
+          className="card-glow absolute right-0 mt-2 w-56 overflow-hidden rounded-[var(--radius-card)] py-1 shadow-xl top-12"
         >
           <div className="border-b border-white/[0.07] px-4 py-3">
             <p className="truncate text-sm font-medium text-on-surface">{name}</p>

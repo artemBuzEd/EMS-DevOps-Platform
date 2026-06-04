@@ -32,18 +32,6 @@ export function Hero({
           />
         ))}
       </div>
-
-      {/* overlaid actions */}
-      <div className="absolute bottom-12 left-0 right-0">
-        <div className="mx-auto flex max-w-[1200px] gap-3 px-5 sm:px-8">
-          <button className="rounded bg-primary px-5 py-2.5 text-sm font-medium text-on-primary transition-opacity hover:opacity-90">
-            Register Now
-          </button>
-          <button className="rounded border border-white/20 bg-black/30 px-5 py-2.5 text-sm font-medium text-on-surface backdrop-blur-sm transition-colors hover:border-white/40">
-            View Schedule
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

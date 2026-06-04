@@ -1,5 +1,8 @@
 using BLL.Services.Contracts;
 using DAL.UoW;
+// Alias the entity: its unqualified name `UserProfile` collides with the
+// proto-generated gRPC service class UserProfileApi.Protos.UserProfile.
+using UserProfileEntity = DAL.Entities.UserProfile;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using UserProfileApi.Protos;
@@ -47,18 +50,44 @@ public class UserProfileGrpcService : UserProfile.UserProfileBase
     {
         _logger.LogInformation("gRPC GetEventComments for event: {EventId}", request.EventId);
 
-        var comments = await _commentService.GetAllByEventId(request.EventId);
+        var comments = (await _commentService.GetAllByEventId(request.EventId)).ToList();
+
+        // Resolve commenter names in a single query — comments and profiles live
+        // in this service's DB. A missing profile just leaves `user` unset.
+        var userIds = comments.Select(c => c.user_id).Distinct().ToList();
+        var profilesById = new Dictionary<string, UserProfileEntity>();
+        if (userIds.Count > 0)
+        {
+            var profiles = await _unitOfWork.UserProfileRepository
+                .FindByCondition(u => userIds.Contains(u.user_id));
+            profilesById = profiles.ToDictionary(p => p.user_id);
+        }
 
         var response = new EventCommentsResponse();
-        response.Comments.AddRange(comments.Select(c => new EventCommentResponse
+        response.Comments.AddRange(comments.Select(c =>
         {
-            Id = c.id,
-            UserId = c.user_id,
-            EventId = c.event_id,
-            Comment = c.comment,
-            Rating = c.rating,
-            AddedAt = Timestamp.FromDateTime(DateTime.SpecifyKind(c.added_at, DateTimeKind.Utc)),
-            IsChanged = c.is_changed
+            var dto = new EventCommentResponse
+            {
+                Id = c.id,
+                UserId = c.user_id,
+                EventId = c.event_id,
+                Comment = c.comment,
+                Rating = c.rating,
+                AddedAt = Timestamp.FromDateTime(DateTime.SpecifyKind(c.added_at, DateTimeKind.Utc)),
+                IsChanged = c.is_changed
+            };
+
+            if (profilesById.TryGetValue(c.user_id, out var profile))
+            {
+                dto.User = new CommentUser
+                {
+                    UserId = profile.user_id,
+                    FirstName = profile.first_name ?? string.Empty,
+                    LastName = profile.last_name ?? string.Empty
+                };
+            }
+
+            return dto;
         }));
 
         return response;

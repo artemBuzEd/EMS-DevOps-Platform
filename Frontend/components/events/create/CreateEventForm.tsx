@@ -28,18 +28,16 @@ function toIso(local: string): string {
 
 export function CreateEventForm({
   venues,
-  categories,
   onDirtyChange,
 }: {
   venues: Venue[];
-  categories: string[];
   onDirtyChange: (dirty: boolean) => void;
 }) {
   const router = useRouter();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState<string | null>(null);
+  const [category, setCategory] = useState<string>('');
   const [capacity, setCapacity] = useState("");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
@@ -70,6 +68,7 @@ export function CreateEventForm({
   // ── Derived validation ────────────────────────────────────────────────────
   const trimmedTitle = title.trim();
   const trimmedDesc = description.trim();
+  const trimmedCategory = category.trim();
   const capacityNum = Number(capacity);
   const capacityValid =
     capacity.trim() !== "" && Number.isInteger(capacityNum) && capacityNum > 0;
@@ -104,7 +103,7 @@ export function CreateEventForm({
         : trimmedDesc.length > DESC_MAX
           ? `Description must be ${DESC_MAX} characters or fewer.`
           : null;
-  const categoryError = !category ? "Select a category." : null;
+  const categoryError = trimmedCategory.length === 0 ? "Category is required." : null;
   const capacityFormatError = !capacityValid
     ? "Enter a capacity greater than 0."
     : null;
@@ -130,7 +129,7 @@ export function CreateEventForm({
   const isDirty =
     title !== "" ||
     description !== "" ||
-    category !== null ||
+    category !== "" ||
     capacity !== "" ||
     start !== "" ||
     end !== "" ||
@@ -200,7 +199,7 @@ export function CreateEventForm({
       city: selectedVenue.city,
       address: selectedVenue.address,
       country: selectedVenue.country,
-      categoryName: category!,
+      categoryName: trimmedCategory!,
       // TODO: the categories endpoint returns names only, so no description is
       // available to send. Backend defaults/ignores an empty string.
       categoryDescription: "",
@@ -290,7 +289,6 @@ export function CreateEventForm({
         description={description}
         category={category}
         capacity={capacity}
-        categories={categories}
         errors={{
           title: touched.title ? titleError : null,
           description: touched.description ? descriptionError : null,
