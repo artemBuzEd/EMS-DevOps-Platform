@@ -1,4 +1,6 @@
 import type {
+  CreateEventCalendarRequest,
+  CreateEventRequest,
   EventCatalogEvent,
   EventDetails,
   EventListItem,
@@ -8,6 +10,7 @@ import type {
   UserDashboardResponse,
   UserProfileResponse,
   UserProfileUpdateRequest,
+  Venue,
 } from "./types";
 import { authedFetch } from "./auth/authedFetch";
 
@@ -247,6 +250,97 @@ export async function deleteAvatar(
   if (!res.ok) {
     throw new ApiError(res.status, `DELETE avatar failed (${res.status})`);
   }
+}
+
+// ── Create Event (/events/new) ───────────────────────────────────────────────
+// Both lookups are public read endpoints ([AllowAnonymous] server-side), so they
+// use the token-free getJson — no Authorization header needed to populate the form.
+
+// GET /api/events/categories -> string[] (distinct category names only; the
+// endpoint does NOT return descriptions — see createEvent's categoryDescription).
+export function getCategories(signal?: AbortSignal): Promise<string[]> {
+  return getJson<string[]>("/api/events/categories", signal);
+}
+
+// GET /api/venues/GetAllVenues -> Venue[] (no backend pagination; the page
+// paginates on the client). The gateway rewrites /api/venues -> /api/Venue, so
+// the browser-facing path is the lowercase `venues` form.
+export function getAllVenues(signal?: AbortSignal): Promise<Venue[]> {
+  return getJson<Venue[]>("/api/venues/GetAllVenues", signal);
+}
+
+// POST /api/events -> 201 { id }. Requires the CanCreateEvent policy, so it goes
+// through authedFetch (bearer token, refresh, 401 retry). On 400 the backend
+// returns { message }; surface it so the form can show "Server rejected: …".
+export async function createEvent(
+  body: CreateEventRequest,
+  signal?: AbortSignal,
+): Promise<string> {
+  const res = await authedFetch(`${BASE_URL}/api/events`, {
+    method: "POST",
+    signal,
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    let message = `POST /api/events failed (${res.status})`;
+    if (res.status === 400) {
+      try {
+        const data = (await res.json()) as { message?: string };
+        if (data?.message) message = data.message;
+      } catch {
+        // non-JSON body — keep the generic message
+      }
+    }
+    throw new ApiError(res.status, message);
+  }
+  const data = (await res.json()) as { id: string };
+  return data.id;
+}
+
+// POST /api/events/{id}/picture (multipart, field `file`, <=6MB). Runs as phase 2
+// after createEvent. Do NOT set Content-Type — the browser sets the boundary.
+export async function uploadEventPicture(
+  eventId: string,
+  file: File,
+  signal?: AbortSignal,
+): Promise<string> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await authedFetch(
+    `${BASE_URL}/api/events/${encodeURIComponent(eventId)}/picture`,
+    { method: "POST", signal, body: form },
+  );
+  if (!res.ok) {
+    throw new ApiError(res.status, `POST event picture failed (${res.status})`);
+  }
+  const data = (await res.json()) as { imageUrl: string };
+  return data.imageUrl;
+}
+
+// ── Event registration (event details page) ─────────────────────────────────
+// POST /api/users/UserEventCalendar. [Authorize] server-side, so authedFetch.
+// No registration service exists: registration_id is a random (non-unique) int and
+// status is a coin-flip between "Registered" and "Pending", both generated here.
+export async function registerForEvent(
+  eventId: string,
+  signal?: AbortSignal,
+): Promise<CreateEventCalendarRequest["status"]> {
+  const body: CreateEventCalendarRequest = {
+    event_id: eventId,
+    registration_id: Math.floor(Math.random() * 2_000_000_000) + 1,
+    status: Math.random() < 0.5 ? "Registered" : "Pending",
+  };
+  const res = await authedFetch(`${BASE_URL}/api/users/UserEventCalendar`, {
+    method: "POST",
+    signal,
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    throw new ApiError(res.status, `POST UserEventCalendar failed (${res.status})`);
+  }
+  return body.status;
 }
 
 // Avatars are served as relative paths (`/uploads/users/...`) from the gateway;

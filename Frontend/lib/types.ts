@@ -159,3 +159,31 @@ export interface UserProfileUpdateRequest {
   bio: string;
   birth_date: string; // ISO 8601
 }
+
+// POST /api/users/UserEventCalendar body -> UserEventCalendarCreateRequestDTO
+// (snake_case wire). userId comes from the JWT, not the body. No real registration
+// service exists, so registration_id is a non-unique random int generated client-side.
+export interface CreateEventCalendarRequest {
+  event_id: string;
+  registration_id: number;
+  status: "Registered" | "Pending";
+}
+
+// ── Create Event (/events/new) ───────────────────────────────────────────────
+// POST /api/events body -> CreateEventRequest (camelCase wire; System.Text.Json
+// lowercases the C# PascalCase props). City/Address/Country are derived from the
+// selected venue on the client and sent silently — they are NOT form inputs.
+// OrganizerId is NOT sent: the controller reads it from the JWT NameIdentifier claim.
+export interface CreateEventRequest {
+  title: string;
+  description: string;
+  startDate: string; // ISO 8601
+  endDate: string; // ISO 8601
+  city: string;
+  address: string;
+  country: string;
+  categoryName: string;
+  categoryDescription: string;
+  venueId: string; // Venue.id (int) stringified — the DTO types VenueId as string
+  capacity: number;
+}

@@ -106,6 +106,35 @@ export function isUnsetDate(iso: string | null | undefined): boolean {
   return isNaN(d.getTime()) || d.getUTCFullYear() <= 1;
 }
 
+/**
+ * Human duration between two datetimes, e.g. "3 hours", "45 minutes",
+ * "2 days, 4 hours". Returns "" if either side is missing/invalid or end <= start.
+ * Used live between the Create Event date pickers.
+ */
+export function formatDuration(
+  startIso: string,
+  endIso: string,
+): string {
+  if (!startIso || !endIso) return "";
+  const start = new Date(startIso).getTime();
+  const end = new Date(endIso).getTime();
+  if (isNaN(start) || isNaN(end) || end <= start) return "";
+
+  let mins = Math.round((end - start) / 60000);
+  const days = Math.floor(mins / 1440);
+  mins -= days * 1440;
+  const hours = Math.floor(mins / 60);
+  mins -= hours * 60;
+
+  const part = (n: number, unit: string) =>
+    `${n} ${unit}${n === 1 ? "" : "s"}`;
+  const parts: string[] = [];
+  if (days) parts.push(part(days, "day"));
+  if (hours) parts.push(part(hours, "hour"));
+  if (mins && !days) parts.push(part(mins, "minute")); // omit minutes for multi-day ranges
+  return parts.join(", ") || "0 minutes";
+}
+
 /** ISO date -> "YYYY-MM-DD" for binding to <input type="date"> (local calendar day). */
 export function toDateInputValue(iso: string): string {
   const d = new Date(iso);

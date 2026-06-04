@@ -3,6 +3,7 @@
 import { Suspense } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { FlashToast } from "@/components/FlashToast";
 import { SearchHero } from "@/components/home/SearchHero";
 import { FilterSidebar } from "@/components/home/FilterSidebar";
 import { ActiveFilters } from "@/components/home/ActiveFilters";
@@ -24,6 +25,16 @@ export default function HomePage() {
         {/* useSearchParams (inside useEventListing) requires a Suspense boundary. */}
         <Suspense fallback={<HeroFallback />}>
           <EventListing />
+        </Suspense>
+        <Suspense fallback={null}>
+          <FlashToast
+            resolve={(p) =>
+              p.get("denied") === "create-event"
+                ? "You don't have permission to create events."
+                : null
+            }
+            stripParams={["denied"]}
+          />
         </Suspense>
       </main>
       <Footer />
