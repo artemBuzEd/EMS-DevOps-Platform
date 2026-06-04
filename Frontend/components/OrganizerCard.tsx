@@ -26,9 +26,6 @@ export function OrganizerCard({
           <div className="truncate text-sm font-medium text-on-surface">
             {name}
           </div>
-          <span className="cursor-pointer text-xs text-secondary hover:text-on-surface">
-            View Profile
-          </span>
         </div>
       </div>
     </section>

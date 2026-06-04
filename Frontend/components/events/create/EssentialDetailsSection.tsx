@@ -20,7 +20,6 @@ export function EssentialDetailsSection({
   description,
   category,
   capacity,
-  categories,
   errors,
   disabled,
   onTitleChange,
@@ -31,9 +30,8 @@ export function EssentialDetailsSection({
 }: {
   title: string;
   description: string;
-  category: string | null;
+  category: string;
   capacity: string;
-  categories: string[];
   errors: {
     title: string | null;
     description: string | null;
@@ -134,15 +132,17 @@ export function EssentialDetailsSection({
           <label htmlFor="event-category" className={labelClass}>
             Category
           </label>
-          <CategorySelect
-            id="event-category"
-            options={categories}
-            value={category}
-            onChange={onCategoryChange}
-            onBlur={() => onBlur("category")}
-            invalid={!!errors.category}
-            describedBy={errors.category ? "event-category-error" : undefined}
-            disabled={disabled}
+          <input
+              id="event-category"
+              type="text"
+              value={category ?? ''}
+              maxLength={TITLE_MAX}
+              disabled={disabled}
+              onChange={(e) => onCategoryChange(e.target.value)}
+              onBlur={() => onBlur("category")}
+              aria-invalid={!!errors.category}
+              aria-describedby={errors.category ? "event-category-error" : undefined}
+              className={inputClass(!!errors.title)}
           />
           {errors.category && (
             <p id="event-category-error" className={errorTextClass}>

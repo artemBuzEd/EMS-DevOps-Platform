@@ -1,4 +1,5 @@
 import type {
+  Comment,
   CreateEventCalendarRequest,
   CreateEventRequest,
   EventCatalogEvent,
@@ -341,6 +342,27 @@ export async function registerForEvent(
     throw new ApiError(res.status, `POST UserEventCalendar failed (${res.status})`);
   }
   return body.status;
+}
+
+// ── Comments (event details page) ────────────────────────────────────────────
+// POST /api/users/UserComment -> 201 with the created comment. [Authorize]
+// server-side, so authedFetch (bearer token, refresh, 401 retry). The 201 body
+// is a UserCommentResponceDTO, which is field-for-field identical to `Comment`,
+// so it's returned as-is for the caller to drop straight into the list.
+export async function createComment(
+  body: { event_id: string; comment: string; rating: number },
+  signal?: AbortSignal,
+): Promise<Comment> {
+  const res = await authedFetch(`${BASE_URL}/api/users/UserComment`, {
+    method: "POST",
+    signal,
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    throw new ApiError(res.status, `POST UserComment failed (${res.status})`);
+  }
+  return (await res.json()) as Comment;
 }
 
 // Avatars are served as relative paths (`/uploads/users/...`) from the gateway;

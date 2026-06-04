@@ -26,6 +26,14 @@ export interface Venue {
   capacity: number | null;
 }
 
+// Nested author on a comment. Null when the commenter's profile can't be
+// resolved (so rendering must fall back to a label derived from user_id).
+export interface CommentUser {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+}
+
 export interface Comment {
   id: number;
   user_id: string;
@@ -34,6 +42,7 @@ export interface Comment {
   rating: number;
   added_at: string; // ISO 8601
   is_changed: boolean;
+  user: CommentUser | null;
 }
 
 // EventDetailsResponse (PascalCase top-level keys)

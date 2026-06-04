@@ -105,7 +105,7 @@ export default function EventDetailsPage() {
         <div className="space-y-6">
           <AboutCard description={ev.description} />
           <VenueCard venue={venue} fallbackLocation={ev.fullLocation} />
-          <DiscussionCard comments={comments} />
+          <DiscussionCard comments={comments} eventId={ev.id} />
         </div>
 
         <aside className="space-y-6 lg:sticky lg:top-20 lg:self-start">

@@ -35,6 +35,13 @@ message EventCommentResponse {
   int32 rating = 5;
   google.protobuf.Timestamp added_at = 6;
   bool is_changed = 7;
+  CommentUser user = 8;
+}
+
+message CommentUser {
+  string user_id = 1;
+  string first_name = 2;
+  string last_name = 3;
 }
 
 message EventCommentsResponse {

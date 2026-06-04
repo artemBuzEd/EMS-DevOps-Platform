@@ -127,7 +127,13 @@ public class AggregatorGrpcService
                 comment = c.Comment,
                 rating = c.Rating,
                 added_at = c.AddedAt.ToDateTime(),
-                is_changed = c.IsChanged
+                is_changed = c.IsChanged,
+                user = c.User == null ? null : new CommentUserDto
+                {
+                    user_id = c.User.UserId,
+                    first_name = c.User.FirstName,
+                    last_name = c.User.LastName
+                }
             }),
             RegisteredUsersCount = registrationsResponse.Count
         };

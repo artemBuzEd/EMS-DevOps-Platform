@@ -137,7 +137,6 @@ export default function CreateEventPage() {
           {authenticated && canCreate && state.kind === "ready" && (
             <CreateEventForm
               venues={state.venues}
-              categories={state.categories}
               onDirtyChange={onDirtyChange}
             />
           )}
