@@ -17,4 +17,5 @@ public interface IEventRepository
     Task<IEnumerable<Event>> GetEventsByDateAsync(DateTime startDate, DateTime endDate);
     Task<PagedResult<Event>> GetPagedEventsAsync(int page, int pageSize, string? categoryName);
     Task<IEnumerable<Event>> GetByIdsAsync(IEnumerable<string> ids);
+    Task<IEnumerable<string>> GetDistinctCategoryNamesAsync();
 }
