@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { FlashToast } from "@/components/FlashToast";
 import { Hero } from "@/components/Hero";
 import { EventHeader } from "@/components/EventHeader";
 import { AboutCard } from "@/components/AboutCard";
@@ -109,6 +110,7 @@ export default function EventDetailsPage() {
 
         <aside className="space-y-6 lg:sticky lg:top-20 lg:self-start">
           <EventStatusCard
+            eventId={ev.id}
             registered={registered}
             capacity={ev.capacity}
             endDate={ev.endDate}
@@ -116,6 +118,19 @@ export default function EventDetailsPage() {
           <OrganizerCard organizer={organizer} organizerId={ev.organizerId} />
         </aside>
       </div>
+
+      {/* One-time post-create toasts (?created / &imageFailed), then strip params. */}
+      <Suspense fallback={null}>
+        <FlashToast
+          resolve={(p) => {
+            if (p.get("created") !== "true") return null;
+            return p.get("imageFailed") === "true"
+              ? "Event created — but the cover image didn't upload. You can add it from this page."
+              : "Event created";
+          }}
+          stripParams={["created", "imageFailed"]}
+        />
+      </Suspense>
     </Shell>
   );
 }

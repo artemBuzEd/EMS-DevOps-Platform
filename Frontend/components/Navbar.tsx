@@ -2,15 +2,22 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BellIcon, SearchIcon, SettingsIcon } from "./icons";
+import { BellIcon, SettingsIcon } from "./icons";
+import { getUserProfile, mediaUrl } from "@/lib/api";
 import { useAuth } from "@/lib/auth/useAuth";
 import { useNavGuard } from "./profile/navGuard";
 
-const NAV = ["Events", "Venues", "Schedule", "Resources"];
+const NAV = ["Events", "Venues", "Schedule"];
 
 export function Navbar() {
   const router = useRouter();
   const guard = useNavGuard();
+  const { user } = useAuth();
+
+  // Only organizers/admins can create events (mirrors the CanCreateEvent policy).
+  const canCreate =
+    !!user &&
+    (user.roles.includes("organizer") || user.roles.includes("admin"));
 
   // All in-app navigation passes through the guard so the Edit Profile page can warn
   // about unsaved changes before the route changes. Elsewhere the guard always allows.
@@ -47,10 +54,15 @@ export function Navbar() {
         </nav>
 
         <div className="ml-auto flex items-center gap-3">
-          <div className="hidden items-center gap-2 rounded-md border border-white/10 bg-surface-low px-3 py-1.5 sm:flex">
-            <SearchIcon className="text-muted" width={15} height={15} />
-            <span className="text-xs text-muted">Search...</span>
-          </div>
+          {canCreate && (
+            <button
+              type="button"
+              onClick={() => navigate("/events/new")}
+              className="rounded bg-primary px-3 py-1.5 text-sm font-medium text-on-primary transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo"
+            >
+              Create Event
+            </button>
+          )}
           <button
             aria-label="Notifications"
             className="text-on-surface-variant transition-colors hover:text-on-surface"
@@ -75,6 +87,27 @@ export function Navbar() {
 // Sign-in button when signed out; avatar + dropdown menu when signed in.
 function AuthControl() {
   const { authenticated, user, login, logout } = useAuth();
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  // The token has no avatar, so fetch the profile once to show the real photo.
+  // Falls back to initials if there's no avatar or the fetch fails.
+  useEffect(() => {
+    if (!authenticated || !user) {
+      setAvatarUrl(null);
+      return;
+    }
+    let active = true;
+    getUserProfile(user.sub)
+      .then((p) => {
+        if (active) setAvatarUrl(mediaUrl(p.avatar_url));
+      })
+      .catch(() => {
+        /* keep initials fallback */
+      });
+    return () => {
+      active = false;
+    };
+  }, [authenticated, user]);
 
   if (!authenticated || !user) {
     return (
@@ -87,16 +120,25 @@ function AuthControl() {
     );
   }
 
-  return <UserMenu name={user.name} initials={user.initials} logout={logout} />;
+  return (
+    <UserMenu
+      name={user.name}
+      initials={user.initials}
+      avatarUrl={avatarUrl}
+      logout={logout}
+    />
+  );
 }
 
 function UserMenu({
   name,
   initials,
+  avatarUrl,
   logout,
 }: {
   name: string;
   initials: string;
+  avatarUrl: string | null;
   logout: ReturnType<typeof useAuth>["logout"];
 }) {
   const [open, setOpen] = useState(false);
@@ -133,9 +175,18 @@ function UserMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Account menu"
-        className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-indigo to-secondary-container text-[11px] font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo"
+        className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-indigo to-secondary-container text-[11px] font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo"
       >
-        {initials}
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={avatarUrl}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          initials
+        )}
       </button>
 
       {open && (
