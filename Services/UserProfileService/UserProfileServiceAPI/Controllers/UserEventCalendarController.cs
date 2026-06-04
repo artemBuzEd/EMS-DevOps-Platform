@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace WebApplication1.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/users/[controller]")]
 public class UserEventCalendarController : ControllerBase
@@ -71,8 +72,7 @@ public class UserEventCalendarController : ControllerBase
         var result = await _userEventCalendarService.GetById(calendarId);
         return Ok(result);
     }
-
-    [Authorize]
+    
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -87,8 +87,7 @@ public class UserEventCalendarController : ControllerBase
         var calendars = await _userEventCalendarService.CreateAsync(userId, dto, cancellationToken);
         return CreatedAtAction(nameof(GetEventCalendarById), new { calendarId = calendars.id }, calendars);
     }
-
-    [Authorize]
+    
     [HttpDelete]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
