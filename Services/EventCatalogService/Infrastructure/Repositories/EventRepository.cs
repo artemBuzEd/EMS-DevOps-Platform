@@ -133,6 +133,15 @@ public class EventRepository : IEventRepository
         return new PagedResult<Event>(events, (int)totalCount, page, pageSize);
     }
 
+    public async Task<IEnumerable<string>> GetDistinctCategoryNamesAsync()
+    {
+        var names = await _context.Events
+            .Distinct<string>("category.name", Builders<Event>.Filter.Empty)
+            .ToListAsync();
+
+        return names.OrderBy(n => n);
+    }
+
     public async Task<IEnumerable<Event>> GetByIdsAsync(IEnumerable<string> ids)
     {
         var idList = ids.ToList();

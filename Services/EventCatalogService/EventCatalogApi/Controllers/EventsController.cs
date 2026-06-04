@@ -5,6 +5,7 @@ using Application.Events.Commands.DeleteEvent;
 using Application.Events.Commands.UpdateEvent;
 using Application.Events.Queries.GetAllEventsByDateRangeQuery;
 using Application.Events.Queries.GetAllEventsQuery;
+using Application.Events.Queries.GetCategoryNamesQuery;
 using Application.Events.Queries.GetEventByIdQuery;
 using Application.Events.Queries.GetEventByText;
 using Application.Events.Queries.GetEventsByTitleQuery;
@@ -42,6 +43,14 @@ public class EventsController : BaseApiController
     {
         var query = new GetAllEventsQuery(pageNumber, pageSize, categoryNameFilter);
         return await HandleRequest<GetAllEventsQuery, PagedResult<EventMiniDto>>(query, cancellationToken);
+    }
+
+    [AllowAnonymous]
+    [HttpGet("categories")]
+    public async Task<IActionResult> GetCategoryNames(CancellationToken cancellationToken = default)
+    {
+        var query = new GetCategoryNamesQuery();
+        return await HandleRequest<GetCategoryNamesQuery, IEnumerable<string>>(query, cancellationToken);
     }
 
     [AllowAnonymous]
