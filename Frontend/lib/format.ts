@@ -75,6 +75,46 @@ const enShortDate = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
 });
 const enMonth = new Intl.DateTimeFormat("en-US", { month: "short" });
+const enLongDate = new Intl.DateTimeFormat("en-US", {
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+});
+
+/** Full date, e.g. "October 14, 1988" — used for the read-only birth date. */
+export function formatLongDate(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return enLongDate.format(d);
+}
+
+/** Short date, e.g. "Oct 24, 2021" — used for the "Created" metadata strip. */
+export function formatShortDate(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return enShortDate.format(d);
+}
+
+/**
+ * A .NET non-nullable DateTime that was never set serializes to year 0001
+ * (DateTime.MinValue). Treat that — and any unparseable/empty value — as "not set",
+ * which is what flips the birth-date field from read-only to editable.
+ */
+export function isUnsetDate(iso: string | null | undefined): boolean {
+  if (!iso) return true;
+  const d = new Date(iso);
+  return isNaN(d.getTime()) || d.getUTCFullYear() <= 1;
+}
+
+/** ISO date -> "YYYY-MM-DD" for binding to <input type="date"> (local calendar day). */
+export function toDateInputValue(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
 /**
  * Event date range for calendar cards. Collapses same-month ranges and expands

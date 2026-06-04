@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using BLL.DTOs.Request.UserProfile;
 using BLL.Services.Contracts;
 using Common.FileStorage;
@@ -19,6 +20,11 @@ public class UserProfileController : ControllerBase
         _fileStorage = fileStorage;
     }
 
+    // The caller's own id, taken from the token — never from the route. Used to enforce
+    // that an authenticated user can only act on their own profile (auth != ownership).
+    private string? CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier);
+    private bool IsAdmin => User.IsInRole("admin");
+
     [Authorize(Roles = "admin")]
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -37,6 +43,10 @@ public class UserProfileController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetUserByUserId(string userId)
     {
+        // Owner or admin only — a signed-in user can't read another user's profile by id.
+        if (CurrentUserId != userId && !IsAdmin)
+            return Forbid();
+
         var user = await _userProfileService.GetUserByIdAsync(userId);
         return Ok(user);
     }
@@ -49,6 +59,10 @@ public class UserProfileController : ControllerBase
     public async Task<IActionResult> UpdateUser(string userId, [FromBody] UserProfileUpdateRequestDTO dto,
         CancellationToken cancellationToken)
     {
+        // Owner only — only the user himself may change his profile (admins do not edit here).
+        if (CurrentUserId != userId)
+            return Forbid();
+
         await _userProfileService.UpdateAsync(userId, dto, cancellationToken);
         return NoContent();
     }
@@ -83,6 +97,10 @@ public class UserProfileController : ControllerBase
     [ProducesResponseType(StatusCodes.Status415UnsupportedMediaType)]
     public async Task<IActionResult> UploadAvatar(string userId, IFormFile file, CancellationToken cancellationToken)
     {
+        // Owner only — only the user himself may upload his avatar.
+        if (CurrentUserId != userId)
+            return Forbid();
+
         if (!await _userProfileService.ExistsAsync(userId))
             return NotFound(new { message = $"User with id {userId} not found" });
 
@@ -125,6 +143,10 @@ public class UserProfileController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetAvatar(string userId)
     {
+        // Owner or admin only (kept for parity; the frontend reads avatar_url from the profile GET).
+        if (CurrentUserId != userId && !IsAdmin)
+            return Forbid();
+
         if (!await _userProfileService.ExistsAsync(userId))
             return NotFound(new { message = $"User with id {userId} not found" });
 
@@ -141,6 +163,10 @@ public class UserProfileController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteAvatar(string userId, CancellationToken cancellationToken)
     {
+        // Owner or admin — the user removes his own avatar; admins can remove anyone's (moderation).
+        if (CurrentUserId != userId && !IsAdmin)
+            return Forbid();
+
         if (!await _userProfileService.ExistsAsync(userId))
             return NotFound(new { message = $"User with id {userId} not found" });
 

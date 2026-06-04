@@ -53,7 +53,7 @@ public class UserProfileControllerTests : IClassFixture<CustomWebApplicationFact
     }
 
     [Fact]
-    public async Task UpdateUser_ReturnsNoContent()
+    public async Task UpdateUser_OwnProfile_ReturnsNoContent()
     {
         var dto = new
         {
@@ -63,9 +63,40 @@ public class UserProfileControllerTests : IClassFixture<CustomWebApplicationFact
             birth_date = new DateTime(2000,1,1)
         };
 
-        var response = await _client.PutAsJsonAsync("/api/users/UserProfile/1", dto);
+        // Owner-only: target the user whose id matches the test principal's token.
+        var response = await _client.PutAsJsonAsync(
+            $"/api/users/UserProfile/{TestAuthHandler.DefaultSub}", dto);
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task UpdateUser_OtherUsersProfile_ReturnsForbidden()
+    {
+        var dto = new
+        {
+            first_name = "Hijack",
+            last_name = "Attempt",
+            bio = "should not persist",
+            birth_date = new DateTime(2000,1,1)
+        };
+
+        // The test principal is "test-user-sub"; editing user "1" must be rejected even
+        // though the caller is authenticated (and even though they're an admin — PUT is owner-only).
+        var response = await _client.PutAsJsonAsync("/api/users/UserProfile/1", dto);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task GetUserById_NonOwnerNonAdmin_ReturnsForbidden()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/users/UserProfile/2");
+        request.Headers.Add("X-Test-Roles", "user"); // authenticated, but not admin and not the owner
+
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
     [Fact]

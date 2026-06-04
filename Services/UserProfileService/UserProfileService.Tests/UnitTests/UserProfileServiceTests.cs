@@ -1,11 +1,14 @@
 using Xunit;
 using Moq;
 using BLL.Services;
+using BLL.DTOs.Request.UserProfile;
 using DAL.UoW;
 using DAL.Repositories.Contracts;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using BLL.DTOs.Responce;
+using System;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using DAL.Entities;
@@ -52,6 +55,29 @@ namespace UserProfileService.Tests.UnitTests
             var firstUser = result.First();
             Assert.Equal("John", firstUser.first_name);
             Assert.Equal("Doe", firstUser.last_name);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_EvictsCachedProfile()
+        {
+            // Regression: a profile edit must invalidate the cached entry so the next
+            // read returns the new values instead of the stale cached ones.
+            var existing = new UserProfile { user_id = "1", first_name = "Old", last_name = "Name" };
+            _mockUserProfileRepository.Setup(r => r.GetByIdAsync("1")).ReturnsAsync(existing);
+
+            var dto = new UserProfileUpdateRequestDTO
+            {
+                first_name = "New",
+                last_name = "Name",
+                bio = "",
+                birth_date = new DateTime(2000, 1, 1)
+            };
+
+            await _service.UpdateAsync("1", dto, CancellationToken.None);
+
+            _mockCache.Verify(
+                c => c.RemoveAsync("userProfile_userId:1", It.IsAny<CancellationToken>()),
+                Times.Once);
         }
     }
 }

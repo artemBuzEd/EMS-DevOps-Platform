@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using BLL.DTOs.Request.UserProfile;
 using BLL.DTOs.Responce;
 using BLL.Exceptions;
@@ -32,6 +33,19 @@ public class UserProfileControllerTests
         };
     }
 
+    // Sets the principal the controller's ownership guards read (claim id + optional admin role).
+    private void SetUser(string? sub, bool admin = false)
+    {
+        var claims = new List<Claim>();
+        if (sub is not null)
+            claims.Add(new Claim(ClaimTypes.NameIdentifier, sub));
+        if (admin)
+            claims.Add(new Claim(ClaimTypes.Role, "admin"));
+
+        _controller.ControllerContext.HttpContext.User =
+            new ClaimsPrincipal(new ClaimsIdentity(claims, "Test"));
+    }
+
     [Fact]
     public async Task GetAllUsers_ShouldReturnOkWithAllUsers()
     {
@@ -51,15 +65,30 @@ public class UserProfileControllerTests
     [Fact]
     public async Task UpdateUser_ValidDto_ReturnsNoContentResult()
     {
+        SetUser("1"); // caller is the owner of profile "1"
         var dto = new UserProfileUpdateRequestDTO();
-        
+
         _userProfileServiceMock
             .Setup(s => s.UpdateAsync("1", dto, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        
+
         var result = await _controller.UpdateUser("1", dto, CancellationToken.None);
-        
+
         result.Should().BeOfType<NoContentResult>();
+    }
+
+    [Fact]
+    public async Task UpdateUser_DifferentUser_ReturnsForbid()
+    {
+        SetUser("other-user"); // authenticated, but not the owner of profile "1"
+        var dto = new UserProfileUpdateRequestDTO();
+
+        var result = await _controller.UpdateUser("1", dto, CancellationToken.None);
+
+        result.Should().BeOfType<ForbidResult>();
+        _userProfileServiceMock.Verify(
+            s => s.UpdateAsync(It.IsAny<string>(), It.IsAny<UserProfileUpdateRequestDTO>(),
+                It.IsAny<CancellationToken>()), Times.Never);
     }
     
     [Fact]
@@ -80,10 +109,11 @@ public class UserProfileControllerTests
     [Fact]
     public async Task GetUserByUserId_WhenServiceThrows_ExceptionPropagates()
     {
+        SetUser("999"); // owner of the requested profile, so the guard passes through to the service
         _userProfileServiceMock
             .Setup(s => s.GetUserByIdAsync("999"))
             .ThrowsAsync(new NotFoundException("User 999"));
-        
+
         Func<Task> act = () => _controller.GetUserByUserId("999");
         
         await act.Should().ThrowAsync<NotFoundException>();
