@@ -1,4 +1,5 @@
 using Domain.Interfaces;
+using EventCatalogApi.Seeding;
 using Infrastructure;
 using Infrastructure.Common;
 using Infrastructure.Configuration;
@@ -44,6 +45,10 @@ public static class MongoDbDiInjection
     
     public static async Task InitializeDatabaseAsync(IServiceProvider serviceProvider)
     {
-        var database = serviceProvider.GetRequiredService<IMongoDatabase>();
+        // Touch the database so a connection/auth failure surfaces here at startup.
+        _ = serviceProvider.GetRequiredService<IMongoDatabase>();
+
+        // Seed the curated demo dataset (no-op if events already exist).
+        await EventSeeder.SeedAsync(serviceProvider);
     }
 }

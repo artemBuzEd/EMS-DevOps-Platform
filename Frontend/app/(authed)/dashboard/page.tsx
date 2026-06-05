@@ -1,102 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
 import { UserHeader } from "@/components/UserHeader";
 import { CalendarCard } from "@/components/CalendarCard";
 import { ActivityRow } from "@/components/ActivityRow";
+import { CenterMessage } from "@/components/AppShell";
 import { ApiError, getUserDashboard } from "@/lib/api";
-import { useAuth } from "@/lib/auth/useAuth";
+import { useResource } from "@/lib/useResource";
 import type { UserDashboardResponse } from "@/lib/types";
 
-type State =
-  | { kind: "anonymous" }
-  | { kind: "loading" }
-  | { kind: "error"; title: string; message: string }
-  | { kind: "ready"; data: UserDashboardResponse };
-
 export default function DashboardPage() {
-  // AuthProvider gates rendering until keycloak.init() resolves, so by the time
-  // this renders `authenticated` is authoritative. The dashboard is always the
-  // caller's own — the aggregator reads the user from the token, no id needed.
-  const { authenticated, login } = useAuth();
-  const [state, setState] = useState<State>(
-    authenticated ? { kind: "loading" } : { kind: "anonymous" },
+  // RequireAuth (authed layout) guarantees a signed-in user before this mounts,
+  // and the dashboard is always the caller's own — the aggregator reads the user
+  // from the token, so no id is needed.
+  const res = useResource<UserDashboardResponse>(
+    (signal) => getUserDashboard(signal),
+    [],
   );
 
-  useEffect(() => {
-    if (!authenticated) {
-      setState({ kind: "anonymous" });
-      return;
-    }
+  if (res.status === "loading") {
+    return <DashboardSkeleton />;
+  }
 
-    const controller = new AbortController();
-    setState({ kind: "loading" });
-
-    (async () => {
-      try {
-        const data = await getUserDashboard(controller.signal);
-        setState({ kind: "ready", data });
-      } catch (err) {
-        if (controller.signal.aborted) return;
-        if (err instanceof ApiError && err.status === 404) {
-          setState({
-            kind: "error",
-            title: "Dashboard not found",
-            message: "We couldn't load your profile yet. Try again shortly.",
-          });
-        } else {
-          setState({
-            kind: "error",
-            title: "Couldn't load your dashboard",
-            message:
-              "The dashboard service is unavailable. Is the API gateway running?",
-          });
+  if (res.status === "error") {
+    const notFound = res.error instanceof ApiError && res.error.status === 404;
+    return (
+      <CenterMessage
+        title={notFound ? "Dashboard not found" : "Couldn't load your dashboard"}
+        subtitle={
+          notFound
+            ? "We couldn't load your profile yet. Try again shortly."
+            : "The dashboard service is unavailable. Is the API gateway running?"
         }
-      }
-    })();
-
-    return () => controller.abort();
-  }, [authenticated]);
-
-  if (state.kind === "anonymous") {
-    return (
-      <Shell>
-        <CenterMessage
-          title="Sign in to view your dashboard"
-          subtitle="Your calendars and recent activity live here once you're signed in."
-          action={
-            <button
-              onClick={() => login({ redirectUri: window.location.href })}
-              className="mt-6 rounded bg-primary px-4 py-2 text-sm font-medium text-on-primary transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo"
-            >
-              Sign in
-            </button>
-          }
-        />
-      </Shell>
+      />
     );
   }
 
-  if (state.kind === "loading") {
-    return (
-      <Shell>
-        <DashboardSkeleton />
-      </Shell>
-    );
-  }
-
-  if (state.kind === "error") {
-    return (
-      <Shell>
-        <CenterMessage title={state.title} subtitle={state.message} />
-      </Shell>
-    );
-  }
-
-  const { user, myCalendars, myComments } = state.data;
+  const { user, myCalendars, myComments } = res.data;
   const calendars = myCalendars ?? [];
   // Recent Activity is newest-first.
   const comments = [...(myComments ?? [])].sort(
@@ -104,7 +44,7 @@ export default function DashboardPage() {
   );
 
   return (
-    <Shell>
+    <>
       <UserHeader user={user} />
 
       <section
@@ -155,17 +95,7 @@ export default function DashboardPage() {
           </div>
         )}
       </section>
-    </Shell>
-  );
-}
-
-function Shell({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-screen">
-      <Navbar />
-      <main>{children}</main>
-      <Footer />
-    </div>
+    </>
   );
 }
 
@@ -192,26 +122,6 @@ function EmptyState({
           {cta.label}
         </Link>
       )}
-    </div>
-  );
-}
-
-function CenterMessage({
-  title,
-  subtitle,
-  action,
-}: {
-  title: string;
-  subtitle?: string;
-  action?: React.ReactNode;
-}) {
-  return (
-    <div className="mx-auto flex max-w-[1200px] flex-col items-center justify-center px-5 py-32 text-center">
-      <h1 className="text-2xl font-semibold tracking-[-0.02em]">{title}</h1>
-      {subtitle && (
-        <p className="mt-2 max-w-md text-sm text-on-surface-variant">{subtitle}</p>
-      )}
-      {action}
     </div>
   );
 }

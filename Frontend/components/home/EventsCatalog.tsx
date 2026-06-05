@@ -1,8 +1,6 @@
 "use client";
 
 import { Suspense } from "react";
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
 import { FlashToast } from "@/components/FlashToast";
 import { SearchHero } from "@/components/home/SearchHero";
 import { FilterSidebar } from "@/components/home/FilterSidebar";
@@ -17,28 +15,28 @@ import {
 } from "@/components/home/ListStates";
 import { useEventListing } from "@/components/home/useEventListing";
 
-export default function HomePage() {
+// The public events catalog: search + filters + paged card grid. Rendered at
+// `/events` (its canonical URL, reachable by everyone) and inline at `/` for
+// signed-out visitors, whose home page is this catalog. All URL state is
+// pathname-relative (see useEventListing), so it behaves identically at both.
+export function EventsCatalog() {
   return (
-    <div className="min-h-screen">
-      <Navbar />
-      <main>
-        {/* useSearchParams (inside useEventListing) requires a Suspense boundary. */}
-        <Suspense fallback={<HeroFallback />}>
-          <EventListing />
-        </Suspense>
-        <Suspense fallback={null}>
-          <FlashToast
-            resolve={(p) =>
-              p.get("denied") === "create-event"
-                ? "You don't have permission to create events."
-                : null
-            }
-            stripParams={["denied"]}
-          />
-        </Suspense>
-      </main>
-      <Footer />
-    </div>
+    <>
+      {/* useSearchParams (inside useEventListing) requires a Suspense boundary. */}
+      <Suspense fallback={<HeroFallback />}>
+        <EventListing />
+      </Suspense>
+      <Suspense fallback={null}>
+        <FlashToast
+          resolve={(p) =>
+            p.get("denied") === "create-event"
+              ? "You don't have permission to create events."
+              : null
+          }
+          stripParams={["denied"]}
+        />
+      </Suspense>
+    </>
   );
 }
 

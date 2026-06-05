@@ -3,9 +3,11 @@ using BLL.DTOs.Request.UserEventCalendar;
 using BLL.DTOs.Request.UserProfile;
 using BLL.DTOs.Validation.CreateValidation;
 using BLL.DTOs.Validation.UpdateValidation;
+using BLL.Mapping;
 using BLL.Services;
 using BLL.Services.Contracts;
 using Common.FileStorage;
+using Mapster;
 using DAL.BogusSeed;
 using DAL.BogusSeed.Fakers;
 using DAL.EntityConfig;
@@ -39,6 +41,10 @@ else
         options.UseNpgsql(connectionString);
     });
 }
+
+// Mapster: apply IRegister mappings from the BLL assembly into the global config
+// that the static .Adapt<>() calls use (bridges UserEventCalendar.user -> DTO.profile).
+TypeAdapterConfig.GlobalSettings.Scan(typeof(UserEventCalendarMappingRegister).Assembly);
 
 // ServiceDefaults
 builder.AddServiceDefaults();

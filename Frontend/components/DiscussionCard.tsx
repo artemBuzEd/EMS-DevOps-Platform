@@ -2,9 +2,16 @@
 
 import { useState } from "react";
 import { Card } from "./primitives";
+import { StarRating } from "./StarRating";
 import { StarIcon, SpinnerIcon } from "./icons";
 import { Toast } from "./profile/Toast";
-import { initial, shortUserLabel, timeAgo } from "@/lib/format";
+import {
+  averageRating,
+  formatNumber,
+  initial,
+  shortUserLabel,
+  timeAgo,
+} from "@/lib/format";
 import { ApiError, createComment } from "@/lib/api";
 import { useAuth } from "@/lib/auth/useAuth";
 import type { Comment } from "@/lib/types";
@@ -181,12 +188,29 @@ export function DiscussionCard({
 }) {
   // Seed once from the prop; new comments are prepended so they show instantly.
   const [items, setItems] = useState<Comment[]>(comments);
-  console.log('items',items)
+  // Derived from `items` (the same source the list renders), so the aggregate
+  // updates the moment a rated comment is posted. Null → hide the summary.
+  const summary = averageRating(items);
+
   return (
     <Card>
-      <h2 className="text-xl font-semibold tracking-[-0.02em]">
-        Attendee Discussion
-      </h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-xl font-semibold tracking-[-0.02em]">
+          Attendee Discussion
+        </h2>
+        {summary && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className="font-semibold text-on-surface">
+              {summary.average.toFixed(1)}
+            </span>
+            <StarRating rating={summary.average} />
+            <span className="text-muted">
+              · {formatNumber(summary.count)}{" "}
+              {summary.count === 1 ? "review" : "reviews"}
+            </span>
+          </div>
+        )}
+      </div>
 
       <div className="mt-5">
         <Composer

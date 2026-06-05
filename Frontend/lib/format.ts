@@ -1,3 +1,5 @@
+import type { Comment } from "./types";
+
 const UK = "uk-UA";
 
 const dateFmt = new Intl.DateTimeFormat(UK, {
@@ -29,6 +31,22 @@ export function formatDateRange(startIso: string, endIso: string): string {
 /** Thousands-separated integer, e.g. 1240 -> "1,240". */
 export function formatNumber(n: number): string {
   return new Intl.NumberFormat("en-US").format(n);
+}
+
+/**
+ * Aggregate star rating across an event's comments. Only comments with a real
+ * rating count (rating >= 1); 0/absent ratings are ignored, mirroring the
+ * per-comment Stars renderer. Returns null when nothing is rated. `average`
+ * keeps full precision — round only at display time.
+ */
+export function averageRating(
+  comments: Comment[] | null,
+): { average: number; count: number } | null {
+  if (!comments) return null;
+  const rated = comments.filter((c) => c.rating >= 1);
+  if (rated.length === 0) return null;
+  const sum = rated.reduce((total, c) => total + c.rating, 0);
+  return { average: sum / rated.length, count: rated.length };
 }
 
 /** Relative time like "2 hours ago", "5 hours ago", "3 days ago". */

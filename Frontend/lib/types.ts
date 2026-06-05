@@ -65,6 +65,29 @@ export interface EventWithOrganizer {
   organizer: Organizer | null;
 }
 
+// GET /api/users/UserEventCalendar/UserInfoByEventId/{eventId}
+//   -> UserInfoAndEventCalendarResponceDTO[] (snake_case wire, like Comment).
+// One item per registration; `profile` is the registrant's UserProfileResponceDTO.
+// avatar_url is nullable and resolved through mediaUrl() for display.
+export interface AttendeeProfile {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  avatar_url: string | null;
+}
+
+export interface EventAttendee {
+  id: number;
+  user_id: string;
+  event_id: string;
+  registration_id: number;
+  added_at: string; // ISO 8601
+  status: string;
+  // Null when the registrant has no profile row (registration doesn't create
+  // one); the top-level user_id is always present, so use it as the fallback.
+  profile: AttendeeProfile | null;
+}
+
 // GET /api/events/{id} -> EventCatalog EventDto (only the field we still need)
 export interface EventCatalogEvent {
   id: string;
