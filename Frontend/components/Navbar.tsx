@@ -1,18 +1,26 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { BellIcon, SettingsIcon } from "./icons";
 import { getUserProfile, mediaUrl } from "@/lib/api";
 import { useAuth } from "@/lib/auth/useAuth";
-import { useNavGuard } from "./profile/navGuard";
-
-const NAV = ["Events", "Venues", "Schedule"];
+import { useNavGuard } from "@/lib/navGuard";
 
 export function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const guard = useNavGuard();
-  const { user } = useAuth();
+  const { authenticated, user } = useAuth();
+
+  // "Events" is the public catalog at /events. Only signed-in users get the nav
+  // item — a signed-out visitor's home (`/`) already *is* that catalog, so the
+  // button would just point at the page they're on. Highlight it on any event
+  // route (signed-in users only ever reach the catalog via /events).
+  const onEvents = pathname.startsWith("/events");
+  // "Venues" is public — everyone gets it, since there's no auth-dependent home
+  // that already shows it.
+  const onVenues = pathname.startsWith("/venues");
 
   // Only organizers/admins can create events (mirrors the CanCreateEvent policy).
   const canCreate =
@@ -37,20 +45,30 @@ export function Navbar() {
         </button>
 
         <nav className="hidden items-center gap-5 md:flex">
-          {NAV.map((item, i) => (
+          {authenticated && (
             <button
-              key={item}
               type="button"
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/events")}
               className={`text-sm ${
-                i === 0
+                onEvents
                   ? "text-on-surface"
                   : "text-on-surface-variant hover:text-on-surface"
               } cursor-pointer transition-colors`}
             >
-              {item}
+              Events
             </button>
-          ))}
+          )}
+          <button
+            type="button"
+            onClick={() => navigate("/venues")}
+            className={`text-sm ${
+              onVenues
+                ? "text-on-surface"
+                : "text-on-surface-variant hover:text-on-surface"
+            } cursor-pointer transition-colors`}
+          >
+            Venues
+          </button>
         </nav>
 
         <div className="ml-auto flex items-center gap-3">
@@ -63,20 +81,24 @@ export function Navbar() {
               Create Event
             </button>
           )}
-          <button
-            aria-label="Notifications"
-            className="text-on-surface-variant transition-colors hover:text-on-surface"
-          >
-            <BellIcon />
-          </button>
-          <button
-            type="button"
-            aria-label="Settings"
-            onClick={() => navigate("/settings/profile")}
-            className="text-on-surface-variant transition-colors hover:text-on-surface"
-          >
-            <SettingsIcon />
-          </button>
+          {authenticated && (
+            <>
+              <button
+                aria-label="Notifications"
+                className="text-on-surface-variant transition-colors hover:text-on-surface"
+              >
+                <BellIcon />
+              </button>
+              <button
+                type="button"
+                aria-label="Settings"
+                onClick={() => navigate("/settings/profile")}
+                className="text-on-surface-variant transition-colors hover:text-on-surface"
+              >
+                <SettingsIcon />
+              </button>
+            </>
+          )}
           <AuthControl />
         </div>
       </div>

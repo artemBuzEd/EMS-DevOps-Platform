@@ -217,7 +217,7 @@ export function CreateEventForm({
       } else if (err instanceof ApiError && err.status === 403) {
         setSubmitError({ kind: "forbidden" });
         redirectTimer.current = window.setTimeout(
-          () => router.push("/?denied=create-event"),
+          () => router.push("/events?denied=create-event"),
           3000,
         );
       } else {

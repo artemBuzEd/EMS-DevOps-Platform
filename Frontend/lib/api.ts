@@ -2,6 +2,7 @@ import type {
   Comment,
   CreateEventCalendarRequest,
   CreateEventRequest,
+  EventAttendee,
   EventCatalogEvent,
   EventDetails,
   EventListItem,
@@ -78,6 +79,23 @@ export async function getCategory(
     return data.categoryName ?? null;
   } catch {
     return null;
+  }
+}
+
+// Secondary (fail-soft): registered users + profiles for the read-only Attendees
+// card. [AllowAnonymous] server-side, so plain getJson (no Authorization header);
+// returns an empty list on any error so the page never breaks.
+export async function getEventAttendees(
+  id: string,
+  signal?: AbortSignal,
+): Promise<EventAttendee[]> {
+  try {
+    return await getJson<EventAttendee[]>(
+      `/api/users/UserEventCalendar/UserInfoByEventId/${encodeURIComponent(id)}`,
+      signal,
+    );
+  } catch {
+    return [];
   }
 }
 

@@ -1,9 +1,7 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense } from "react";
 import { useParams } from "next/navigation";
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
 import { FlashToast } from "@/components/FlashToast";
 import { Hero } from "@/components/Hero";
 import { EventHeader } from "@/components/EventHeader";
@@ -12,73 +10,72 @@ import { VenueCard } from "@/components/VenueCard";
 import { DiscussionCard } from "@/components/DiscussionCard";
 import { EventStatusCard } from "@/components/EventStatusCard";
 import { OrganizerCard } from "@/components/OrganizerCard";
-import { getCategory, getEventDetails, getOrganizer } from "@/lib/api";
-import type { EventDetails, Organizer } from "@/lib/types";
+import { AttendeesCard } from "@/components/AttendeesCard";
+import { CenterMessage } from "@/components/AppShell";
+import {
+  getCategory,
+  getEventAttendees,
+  getEventDetails,
+  getOrganizer,
+} from "@/lib/api";
+import { useResource } from "@/lib/useResource";
+import type { EventAttendee, EventDetails, Organizer } from "@/lib/types";
 import { resolveAssetUrl } from "@/lib/url";
 
-type State =
-  | { kind: "loading" }
-  | { kind: "error"; message: string }
-  | { kind: "ready"; details: EventDetails; organizer: Organizer | null; category: string | null };
+type EventBundle = {
+  details: EventDetails;
+  organizer: Organizer | null;
+  category: string | null;
+  attendees: EventAttendee[];
+};
 
 export default function EventDetailsPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id;
-  const [state, setState] = useState<State>({ kind: "loading" });
 
-  useEffect(() => {
-    if (!id) return;
-    const controller = new AbortController();
-    setState({ kind: "loading" });
+  const res = useResource<EventBundle>(
+    async (signal) => {
+      const details = await getEventDetails(id!, signal);
+      // Secondary, fail-soft enrichment in parallel.
+      const [organizer, category, attendees] = await Promise.all([
+        getOrganizer(id!, signal),
+        getCategory(id!, signal),
+        getEventAttendees(id!, signal),
+      ]);
+      return { details, organizer, category, attendees };
+    },
+    [id],
+    { enabled: !!id },
+  );
 
-    (async () => {
-      try {
-        const details = await getEventDetails(id, controller.signal);
-        // Secondary, fail-soft enrichment in parallel.
-        const [organizer, category] = await Promise.all([
-          getOrganizer(id, controller.signal),
-          getCategory(id, controller.signal),
-        ]);
-        setState({ kind: "ready", details, organizer, category });
-      } catch (err) {
-        if (controller.signal.aborted) return;
-        const message =
-          err && typeof err === "object" && "status" in err && err.status === 404
+  if (res.status === "loading") {
+    return <CenterMessage title="Loading event…" />;
+  }
+
+  if (res.status === "error") {
+    const notFound =
+      !!res.error &&
+      typeof res.error === "object" &&
+      "status" in res.error &&
+      (res.error as { status?: number }).status === 404;
+    return (
+      <CenterMessage
+        title="Something went wrong"
+        subtitle={
+          notFound
             ? "This event could not be found."
-            : "Could not load this event. Is the API gateway running?";
-        setState({ kind: "error", message });
-      }
-    })();
-
-    return () => controller.abort();
-  }, [id]);
-
-  if (state.kind === "loading") {
-    return (
-      <Shell>
-        <CenterMessage title="Loading event…" />
-      </Shell>
+            : "Could not load this event. Is the API gateway running?"
+        }
+      />
     );
   }
 
-  if (state.kind === "error") {
-    return (
-      <Shell>
-        <CenterMessage title="Something went wrong" subtitle={state.message} />
-      </Shell>
-    );
-  }
-  
-  const { details, organizer, category } = state;
-  
+  const { details, organizer, category, attendees } = res.data;
+
   if (!details?.event) {
-    return (
-        <Shell>
-          <CenterMessage title="Event not found" />
-        </Shell>
-    );
+    return <CenterMessage title="Event not found" />;
   }
-  
+
   const ev = details.event;
   const venue = details.venue;
   const comments = details.comments ?? [];
@@ -87,7 +84,7 @@ export default function EventDetailsPage() {
   const city = venue?.city ?? null;
 
   return (
-    <Shell>
+    <>
       <Hero pictureUrl={resolveAssetUrl(ev.pictureUrl)} title={ev.title} />
 
       <EventHeader
@@ -115,6 +112,7 @@ export default function EventDetailsPage() {
             capacity={ev.capacity}
             endDate={ev.endDate}
           />
+          <AttendeesCard attendees={attendees} />
           <OrganizerCard organizer={organizer} organizerId={ev.organizerId} />
         </aside>
       </div>
@@ -131,33 +129,6 @@ export default function EventDetailsPage() {
           stripParams={["created", "imageFailed"]}
         />
       </Suspense>
-    </Shell>
-  );
-}
-
-function Shell({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-screen">
-      <Navbar />
-      <main>{children}</main>
-      <Footer />
-    </div>
-  );
-}
-
-function CenterMessage({
-  title,
-  subtitle,
-}: {
-  title: string;
-  subtitle?: string;
-}) {
-  return (
-    <div className="mx-auto flex max-w-[1200px] flex-col items-center justify-center px-5 py-32 text-center">
-      <h1 className="text-2xl font-semibold tracking-[-0.02em]">{title}</h1>
-      {subtitle && (
-        <p className="mt-2 max-w-md text-sm text-on-surface-variant">{subtitle}</p>
-      )}
-    </div>
+    </>
   );
 }
