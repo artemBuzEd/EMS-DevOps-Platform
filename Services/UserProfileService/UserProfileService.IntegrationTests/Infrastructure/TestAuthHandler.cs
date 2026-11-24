@@ -20,6 +20,9 @@ public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
+        if (Request.Headers.Authorization != SchemeName)
+            return Task.FromResult(AuthenticateResult.NoResult());
+
         // Default principal: the canonical test user, admin. Tests that need to act as a
         // different user (impersonation / non-owner cases) or drop admin override via headers:
         //   X-Test-Sub:   the NameIdentifier claim (who the caller is)

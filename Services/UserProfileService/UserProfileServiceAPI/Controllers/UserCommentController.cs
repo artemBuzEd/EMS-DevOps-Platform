@@ -79,22 +79,34 @@ public class UserCommentController : ControllerBase
     
     [HttpPut("{commentId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> UpdateComment(int commentId, [FromBody] UserCommentUpdateRequestDTO dto,
         CancellationToken cancellationToken)
     {
-        await _userCommentService.UpdateAsync(commentId, dto, cancellationToken);
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized();
+
+        await _userCommentService.UpdateAsync(commentId, userId, dto, cancellationToken);
         return NoContent();
     }
     
     [HttpDelete("{commentId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> DeleteComment(int commentId, CancellationToken cancellationToken)
     {
-        await _userCommentService.DeleteAsync(commentId, cancellationToken);
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized();
+
+        await _userCommentService.DeleteAsync(commentId, userId, User.IsInRole("admin"), cancellationToken);
         return NoContent();
     }
 
