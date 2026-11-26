@@ -74,13 +74,15 @@ public class UserCommentService : IUserCommentService
         }
     }
 
-    public async Task UpdateAsync(int commentId, UserCommentUpdateRequestDTO dto, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(int commentId, string userId, UserCommentUpdateRequestDTO dto, CancellationToken cancellationToken = default)
     {
+        var commentToUpdate = await GetExistingCommentAsync(commentId);
+        if (commentToUpdate.user_id != userId)
+            throw new ForbiddenException("Only the author can edit this comment.");
+
+        dto.Adapt(commentToUpdate);
         try
         {
-            var commentToUpdate = await isExists(commentId);
-            dto.Adapt(commentToUpdate);
-            
             await _unitOfWork.BeginTransactionAsync(cancellationToken);
             await _unitOfWork.UserCommentRepository.UpdateAsync(commentToUpdate);
             await _unitOfWork.CompleteAsync(cancellationToken);
@@ -102,11 +104,14 @@ public class UserCommentService : IUserCommentService
         return new PagedList<UserCommentResponceDTO>(mapped, pagedList.TotalCount,pagedList.CurrentPage, pagedList.PageSize);
     }
 
-    public async Task DeleteAsync(int commentId, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(int commentId, string userId, bool isAdmin, CancellationToken cancellationToken = default)
     {
+        var commentToDelete = await GetExistingCommentAsync(commentId);
+        if (commentToDelete.user_id != userId && !isAdmin)
+            throw new ForbiddenException("Only the author or an admin can delete this comment.");
+
         try
         {
-            var commentToDelete = await isExists(commentId);
             await _unitOfWork.BeginTransactionAsync(cancellationToken);
             await _unitOfWork.UserCommentRepository.DeleteAsync(commentToDelete);
             await _unitOfWork.CompleteAsync(cancellationToken);
@@ -119,14 +124,14 @@ public class UserCommentService : IUserCommentService
         }
     }
     
-    private async Task<UserComment> isExists(int commentId)
+    private async Task<UserComment> GetExistingCommentAsync(int commentId)
     {
-        var _comment = await _unitOfWork.UserCommentRepository.GetByIdAsync(commentId);
-        if (_comment == null)
+        var comment = await _unitOfWork.UserCommentRepository.GetByIdAsync(commentId);
+        if (comment == null)
         {
             throw new NotFoundException($"Comment with id {commentId} not found");
         }
 
-        return _comment;
+        return comment;
     }
 }

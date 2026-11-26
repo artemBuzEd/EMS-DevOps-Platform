@@ -39,6 +39,7 @@ public class GlobalExceptionHandlingMiddleware : IMiddleware
             (statusCode, title, detail) = ex switch
             {
                 NotFoundException => (HttpStatusCode.NotFound, "Not Found", ex.Message),
+                ForbiddenException => (HttpStatusCode.Forbidden, "Forbidden", ex.Message),
                 ValidationException => (HttpStatusCode.BadRequest, "Bad Request", ex.Message),
                 _ => (HttpStatusCode.InternalServerError, "Internal Server Error", ex.Message)
             };
