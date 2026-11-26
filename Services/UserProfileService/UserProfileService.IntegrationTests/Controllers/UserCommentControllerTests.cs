@@ -9,22 +9,29 @@ using UserProfileService.IntegrationTests.Infrastructure;
 
 namespace UserProfileService.IntegrationTests.Controllers;
 
-public class UserCommentControllerTests : IClassFixture<CustomWebApplicationFactory>
+public class UserCommentControllerTests : IDisposable
 {
     private const string CommentsUrl = "/api/users/UserComment";
     private const string AuthorId = "1";
     private const string OtherUserId = "2";
     private readonly HttpClient _client;
 
-    public UserCommentControllerTests(CustomWebApplicationFactory factory)
+    private readonly CustomWebApplicationFactory _factory = new();
+
+    public UserCommentControllerTests()
     {
-        factory.InitializeDb();
-        using var scope = factory.Services.CreateScope();
+        _factory.InitializeDb();
+        using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<UserProfileDbContext>();
-        if (!db.UserProfiles.Any())
-            DatabaseSeeder.Seed(db);
-        _client = factory.CreateClient();
+        DatabaseSeeder.Seed(db);
+        _client = _factory.CreateClient();
         _client.DefaultRequestHeaders.Authorization = null;
+    }
+
+    public void Dispose()
+    {
+        _client.Dispose();
+        _factory.Dispose();
     }
 
     [Theory]
@@ -88,6 +95,60 @@ public class UserCommentControllerTests : IClassFixture<CustomWebApplicationFact
         using var response = await _client.SendAsync(request);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task CreateComment_AppearsInPreviouslyReadAuthorList()
+    {
+        var before = await GetAuthorComments();
+
+        var created = await CreateComment();
+
+        var after = await GetAuthorComments();
+        after.Select(comment => comment.id).Should().BeEquivalentTo(
+            before.Select(comment => comment.id).Append(created.id));
+    }
+
+    [Fact]
+    public async Task EditComment_UpdatesPreviouslyReadAuthorList()
+    {
+        var original = await CreateComment();
+        var before = await GetAuthorComments();
+        before.Should().Contain(comment => comment.id == original.id && comment.comment == original.comment);
+
+        using var request = CreateRequest(HttpMethod.Put, original.id, AuthorId, "user");
+        request.Content = JsonContent.Create(new { comment = "Updated comment", rating = 5 });
+        using var response = await _client.SendAsync(request);
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var after = await GetAuthorComments();
+        after.Should().ContainSingle(comment => comment.id == original.id)
+            .Which.Should().Match<UserCommentResponceDTO>(
+                comment => comment.comment == "Updated comment" && comment.rating == 5);
+    }
+
+    [Theory]
+    [InlineData(AuthorId, "user")]
+    [InlineData(OtherUserId, "admin")]
+    public async Task DeleteComment_RemovesCommentFromPreviouslyReadAuthorList(string subject, string role)
+    {
+        var original = await CreateComment();
+        var before = await GetAuthorComments();
+        before.Should().Contain(comment => comment.id == original.id);
+
+        using var request = CreateRequest(HttpMethod.Delete, original.id, subject, role);
+        using var response = await _client.SendAsync(request);
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var after = await GetAuthorComments();
+        after.Select(comment => comment.id).Should().BeEquivalentTo(
+            before.Select(comment => comment.id).Where(id => id != original.id));
+    }
+
+    private async Task<List<UserCommentResponceDTO>> GetAuthorComments()
+    {
+        return (await _client.GetFromJsonAsync<List<UserCommentResponceDTO>>(
+            $"{CommentsUrl}/ByUserId/{AuthorId}"))!;
     }
 
     private async Task<UserCommentResponceDTO> CreateComment()

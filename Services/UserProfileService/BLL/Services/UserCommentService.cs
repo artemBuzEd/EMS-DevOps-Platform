@@ -9,6 +9,7 @@ using DAL.Helpers;
 using DAL.UoW;
 using Mapster;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
 
 
 namespace BLL.Services;
@@ -18,10 +19,13 @@ public class UserCommentService : IUserCommentService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IDistributedCache _cache;
 
-    public UserCommentService(IUnitOfWork unitOfWork, IDistributedCache cache)
+    private readonly ILogger<UserCommentService> _logger;
+
+    public UserCommentService(IUnitOfWork unitOfWork, IDistributedCache cache, ILogger<UserCommentService> logger)
     {
         _unitOfWork = unitOfWork;
         _cache = cache;
+        _logger = logger;
     }
     
     public async Task<IEnumerable<UserCommentResponceDTO>> GetAllByEventId(string eventId)
@@ -32,7 +36,7 @@ public class UserCommentService : IUserCommentService
 
     public async Task<IEnumerable<UserCommentResponceDTO>> GetAllByUserId(string userId)
     {
-        string cacheKey = $"userComments_userId:{userId}";
+        string cacheKey = AuthorCommentsCacheKey(userId);
 
         var allComments = await _cache.GetOrCreateAsync(cacheKey, async token =>
         {
@@ -65,13 +69,15 @@ public class UserCommentService : IUserCommentService
             await _unitOfWork.UserCommentRepository.CreateAsync(commentToCreate);
             await _unitOfWork.CompleteAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
-            return commentToCreate.Adapt<UserCommentResponceDTO>();
         }
         catch (Exception ex)
         {
             await _unitOfWork.RollbackTransactionAsync(cancellationToken);
             throw new ApplicationException("Error creating user comment: " + ex.Message);
         }
+
+        await InvalidateAuthorCommentsAsync(commentToCreate.user_id);
+        return commentToCreate.Adapt<UserCommentResponceDTO>();
     }
 
     public async Task UpdateAsync(int commentId, string userId, UserCommentUpdateRequestDTO dto, CancellationToken cancellationToken = default)
@@ -93,6 +99,8 @@ public class UserCommentService : IUserCommentService
             await _unitOfWork.RollbackTransactionAsync(cancellationToken);
             throw new ApplicationException("Error updating user comment: " + ex.Message);
         }
+
+        await InvalidateAuthorCommentsAsync(commentToUpdate.user_id);
     }
 
     public async Task<PagedList<UserCommentResponceDTO>> GetAllPaginated(UserCommentParameters parameters)
@@ -122,8 +130,24 @@ public class UserCommentService : IUserCommentService
             await _unitOfWork.RollbackTransactionAsync(cancellationToken);
             throw new ApplicationException("Error deleting user comment: " + ex.Message);
         }
+
+        await InvalidateAuthorCommentsAsync(commentToDelete.user_id);
     }
     
+    private static string AuthorCommentsCacheKey(string authorId) => $"userComments_userId:{authorId}";
+
+    private async Task InvalidateAuthorCommentsAsync(string authorId)
+    {
+        try
+        {
+            await _cache.RemoveAsync(AuthorCommentsCacheKey(authorId));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not invalidate cached comments for author {AuthorId}", authorId);
+        }
+    }
+
     private async Task<UserComment> GetExistingCommentAsync(int commentId)
     {
         var comment = await _unitOfWork.UserCommentRepository.GetByIdAsync(commentId);
